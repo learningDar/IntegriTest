@@ -58,5 +58,5 @@ Pending completion and testing of the browser and desktop phases.
 ## APPENDICES
 
 - [Authoritative MVP context](GOOGLE_FORMS_EXAM_MONITOR_MVP_CONTEXT.md)
-- Original context: Git `main`, commit `c142d64`
+- Original context: Git `main`
 - Project workflows: `.agents/skills/` and `AGENTS.md`

@@ -1,6 +1,6 @@
 # Google Forms Exam Integrity Monitor — MVP Context
 
-> This is the authoritative project scope for the Monday evening, October 12, 2026 demonstration (Asia/Manila). The original proposal is preserved in Git on `main` at commit `c142d64`. Finish and test each phase before starting the next.
+> This is the authoritative project scope for the Monday evening, October 12, 2026 demonstration (Asia/Manila). The original proposal is preserved in Git on `main`. Finish and test each phase before starting the next.
 
 ## Purpose and success criterion
 
