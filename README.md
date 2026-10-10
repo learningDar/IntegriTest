@@ -47,7 +47,7 @@ Phase gates and required demonstrations are defined in `GOOGLE_FORMS_EXAM_MONITO
 
 Phase 0 local checks (October 10, 2026): all five project skills passed `quick_validate.py` with UTF-8 enabled; a content check confirmed all 14 requested README headings and the six priority monitoring areas in the MVP context.
 
-Phase 1 automated checks (October 10, 2026; Windows, Node.js 22.19.0): `node --test tests/browser.test.js` passed 6/6 checks covering URL classification, session lifecycle, deduplication, privacy fields, content-script validation, monitored-tab navigation, blank-tab counting, Form-tab interruption, persistence across a simulated service worker restart, and parseable JSON report shape. `node --check` passed for the extension JavaScript, and the manifest parsed as JSON. Hands-on Chrome scenarios remain pending, so Phase 1 has not passed its gate.
+Phase 1 automated checks (October 10, 2026; Windows, Node.js 22.19.0): `node --test tests/browser.test.js` passed 7/7 checks covering URL classification, session lifecycle, deduplication, privacy fields, content-script validation, monitored-tab navigation, blank-tab counting, Form-tab interruption, window focus and fullscreen transitions, persistence across a simulated service worker restart, and parseable JSON report shape. `node --check` passed for the extension JavaScript, and the manifest parsed as JSON. Hands-on Chrome scenarios remain pending, so Phase 1 has not passed its gate.
 
 ## LIMITATIONS
 

@@ -148,3 +148,22 @@ test('opening a blank tab does not double-count its first webpage and closing th
   assert.equal(incidents.filter(x => x.type === 'TAB_SWITCHED').length, 0);
   assert.equal(incidents.filter(x => x.type === 'MONITORING_INTERRUPTED').length, 1);
 });
+
+test('Chrome window focus and fullscreen transitions produce review signals', async () => {
+  const h = harness();
+  await h.send({ kind: 'START_EXAM', tabId: 1 });
+  h.windows.get(7).state = 'normal';
+  h.listeners.boundsChanged(h.windows.get(7));
+  await h.flush();
+  h.windows.get(7).state = 'fullscreen';
+  h.listeners.boundsChanged(h.windows.get(7));
+  await h.flush();
+  h.listeners.focusChanged(-1);
+  await h.flush();
+  h.listeners.focusChanged(7);
+  await h.flush();
+  const incidents = (await h.send({ kind: 'GET_STATUS' })).result.incidents;
+  for (const type of ['FULLSCREEN_EXITED', 'FULLSCREEN_RESTORED', 'WINDOW_FOCUS_LOST', 'WINDOW_FOCUS_RESTORED']) {
+    assert.equal(incidents.filter(x => x.type === type).length, 1, type);
+  }
+});
