@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Exam Integrity Monitor</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <main>
+    <header>
+      <p class="eyebrow">Google Forms</p>
+      <h1>Exam Integrity Monitor</h1>
+      <p class="intro">Observable activity for instructor review. Incidents are not proof of cheating.</p>
+    </header>
+
+    <section class="status-panel" aria-labelledby="status-heading">
+      <div class="status-row">
+        <h2 id="status-heading">Session</h2>
+        <span id="status-badge" class="badge">Loading</span>
+      </div>
+      <p id="session-detail" class="detail">Checking saved session…</p>
+      <p id="desktop-detail" class="detail">Desktop monitor: planned for Phase 2</p>
+      <div class="actions">
+        <button id="start-button" type="button">Start Examination</button>
+        <button id="end-button" type="button" class="secondary" disabled>End Examination</button>
+      </div>
+      <p id="message" role="status" aria-live="polite"></p>
+    </section>
+
+    <section aria-labelledby="report-heading">
+      <div class="report-header">
+        <div>
+          <h2 id="report-heading">Incident timeline</h2>
+          <p id="report-summary" class="detail">No session recorded.</p>
+        </div>
+        <button id="export-button" type="button" class="text-button" disabled>Export JSON</button>
+      </div>
+      <ol id="incidents" class="incidents" aria-live="polite"></ol>
+    </section>
+  </main>
+  <script src="report.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

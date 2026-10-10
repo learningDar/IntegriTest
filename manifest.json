@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "Google Forms Exam Integrity Monitor",
+  "version": "0.1.0",
+  "description": "Records observable exam activity for instructor review.",
+  "permissions": ["storage", "tabs"],
+  "background": { "service_worker": "background.js" },
+  "action": { "default_popup": "popup.html" },
+  "content_scripts": [
+    {
+      "matches": ["https://docs.google.com/forms/*"],
+      "js": ["content.js"],
+      "run_at": "document_start"
+    }
+  ]
+}

@@ -2,7 +2,7 @@
 
 ## PROJECT OVERVIEW
 
-A planned Chrome extension and small Windows companion will record examination activity during a Google Forms session. It will produce a timestamped incident report for a teacher to review. Phase 0 establishes the scope and project workflow; monitoring code is not yet implemented.
+The Chrome extension records observable activity during a Google Forms session and produces a timestamped incident report for teacher review. Browser code and automated checks are present; the required hands-on Chrome demonstration is pending. The Windows companion remains planned.
 
 ## PROBLEM STATEMENT
 
@@ -17,11 +17,11 @@ A Google Forms exam alone provides limited visibility into tab changes, other we
 
 ## SYSTEM FEATURES
 
-**Required MVP, planned:** start/end session, tab and webpage events, ChatGPT hostname classification, foreground Word/Notepad/PDF-reader classification, Chrome PDF identification, form focus/visibility/fullscreen and copy/paste attempts, local incident timeline, and JSON export. Question timing, screenshot-key detection, resize events, and CSV export are deferred until the required demonstrations pass.
+**Browser phase, implemented but pending Chrome verification:** start/end session, tab and webpage events, ChatGPT hostname classification, Chrome PDF URL identification, form focus/visibility/fullscreen and copy/paste attempts, local incident timeline, and JSON export. Foreground Word/Notepad/PDF-reader classification remains planned for the Windows phase. Question timing, screenshot-key detection, resize events, and CSV export are deferred.
 
 ## SYSTEM ARCHITECTURE / COMPONENTS
 
-The planned Manifest V3 extension has a Google Forms content script, a service worker for session and browser events, and a popup for control and reporting. A C# Windows native messaging host supplies foreground app categories. `chrome.storage.local` holds local sessions and incidents. No remote backend is planned for this deadline.
+The Manifest V3 extension has a Google Forms content script, a service worker for session and browser events, and a popup for control and reporting. `chrome.storage.local` holds local sessions and incidents. A C# Windows native messaging host is planned to supply foreground app categories. No remote backend is planned for this deadline.
 
 ## SYSTEM WORKFLOW
 
@@ -29,23 +29,25 @@ The student opens a supported Google Form, starts monitoring in the popup, and t
 
 ## TOOLS & TECHNOLOGIES
 
-Planned: Google Chrome, Chrome Extension Manifest V3, vanilla JavaScript/HTML/CSS, Chrome storage and native messaging APIs, Windows, and a minimal C# host compiled with the available .NET Framework compiler. Git and GitHub hold the project source.
+Current: Google Chrome, Chrome Extension Manifest V3, vanilla JavaScript/HTML/CSS, Chrome storage API, and Node.js built-in test runner. Planned: Windows, Chrome native messaging API, and a minimal C# host compiled with the available .NET Framework compiler. Git and GitHub hold the project source.
 
 ## INSTALLATION / SETUP
 
-Phase 0 contains project documentation only. Unpacked extension loading, native host compilation and registration, and exact prerequisites will be documented after those components are built and tested. Do not use this repository as a working monitor yet.
+For a browser-phase trial, open `chrome://extensions` in Chrome, enable Developer mode, choose **Load unpacked**, and select this repository folder. Open a Google Forms respondent URL ending in `/viewform`, then use the extension popup. This procedure has not yet passed the manual Chrome gate. Native host compilation and registration steps will be added after the Windows component is built and tested. Do not rely on this prototype as a working exam monitor yet.
 
 ## USER GUIDE
 
-Pending implementation and Phase 1/2 verification. The intended controls are Start Examination, End Examination, incident timeline, host status, and Export JSON.
+On a supported Google Form respondent page, open the popup and select **Start Examination**. The popup shows the session status and incident timeline; **End Examination** closes recording, and **Export JSON** downloads the local report. Browser behavior is awaiting hands-on verification. The popup currently states that desktop monitoring is planned for Phase 2.
 
 ## QUALITY ASSURANCE & TESTING
 
-Phase gates and required demonstrations are defined in `GOOGLE_FORMS_EXAM_MONITOR_MVP_CONTEXT.md`. Testing will cover correct session attachment, event deduplication, persistence, export validity, desktop-host interruption, privacy boundaries, and no incidents after ending.
+Phase gates and required demonstrations are defined in `GOOGLE_FORMS_EXAM_MONITOR_MVP_CONTEXT.md`. Run `node --test tests/browser.test.js` for repeatable browser logic checks. Use `tests/MANUAL_BROWSER.md` for the required Chrome acceptance check. Desktop-host interruption and foreground-app testing follow in Phase 2.
 
 ## TEST RESULTS
 
-Phase 0 local checks (October 10, 2026): all five project skills passed `quick_validate.py` with UTF-8 enabled; a content check confirmed all 14 requested README headings and the six priority monitoring areas in the MVP context. No application tests have run because monitoring code is not yet implemented. Record dated commands, manual scenarios, outcomes, and unresolved defects here after each later phase passes.
+Phase 0 local checks (October 10, 2026): all five project skills passed `quick_validate.py` with UTF-8 enabled; a content check confirmed all 14 requested README headings and the six priority monitoring areas in the MVP context.
+
+Phase 1 automated checks (October 10, 2026; Windows, Node.js 22.19.0): `node --test tests/browser.test.js` passed 6/6 checks covering URL classification, session lifecycle, deduplication, privacy fields, content-script validation, monitored-tab navigation, blank-tab counting, Form-tab interruption, persistence across a simulated service worker restart, and parseable JSON report shape. `node --check` passed for the extension JavaScript, and the manifest parsed as JSON. Hands-on Chrome scenarios remain pending, so Phase 1 has not passed its gate.
 
 ## LIMITATIONS
 
@@ -53,10 +55,11 @@ Opening ChatGPT does not prove its use. A foreground app event does not prove a 
 
 ## CONCLUSION
 
-Pending completion and testing of the browser and desktop phases.
+Pending hands-on browser verification and completion and testing of the desktop phase.
 
 ## APPENDICES
 
 - [Authoritative MVP context](GOOGLE_FORMS_EXAM_MONITOR_MVP_CONTEXT.md)
 - Original context: Git `main`
 - Project workflows: `.agents/skills/` and `AGENTS.md`
+- Browser manual check: `tests/MANUAL_BROWSER.md`
