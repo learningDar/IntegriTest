@@ -177,7 +177,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   (async () => {
     try {
       let result;
-      if (sender.tab && message?.kind !== "CONTENT_EVENT") {
+      if (sender.tab && message?.kind !== "CONTENT_EVENT" &&
+          sender.url !== chrome.runtime.getURL("popup.html")) {
         throw new Error("Session controls are available only from the extension popup.");
       }
       switch (message?.kind) {

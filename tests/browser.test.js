@@ -28,7 +28,10 @@ function harness(stored = {}) {
       async update(id, changes) { Object.assign(windows.get(id), changes); return windows.get(id); },
       onFocusChanged: event('focusChanged'), onBoundsChanged: event('boundsChanged')
     },
-    runtime: { onMessage: event('message') }
+    runtime: {
+      getURL(file) { return `chrome-extension://demo/${file}`; },
+      onMessage: event('message')
+    }
   };
   const context = vm.createContext({
     chrome, crypto, URL, Date, Promise, Number, Set, console,
@@ -104,6 +107,28 @@ test('content signals require the monitored Form and cannot control sessions', a
   assert.equal(incidents.filter(x => x.type === 'PASTE_ATTEMPT').length, 1);
   assert.equal(incidents.filter(x => x.type === 'WINDOW_FOCUS_LOST').length, 1);
   assert.ok(incidents.every(x => x.appCategory === null));
+});
+
+test('stale Form content script survives synchronous extension invalidation', () => {
+  const handlers = {};
+  const document = {
+    addEventListener(type, handler) { handlers[type] = handler; }
+  };
+  const window = { addEventListener() {} };
+  const chrome = { runtime: { sendMessage() { throw Error('Extension context invalidated.'); } } };
+  const context = vm.createContext({ location: { pathname: '/forms/d/e/demo/viewform' }, document, window, chrome });
+  vm.runInContext(readFileSync(path.join(__dirname, '../content.js'), 'utf8'), context);
+  assert.doesNotThrow(() => handlers.copy());
+  assert.doesNotThrow(() => handlers.paste());
+});
+
+test('standalone extension control page can start while ordinary tabs cannot', async () => {
+  const h = harness();
+  const untrusted = { tab: { id: 2 }, url: 'https://example.com/' };
+  assert.equal((await h.send({ kind: 'START_EXAM', tabId: 1 }, untrusted)).ok, false);
+  const ownPage = { tab: { id: 3 }, url: 'chrome-extension://demo/popup.html' };
+  assert.equal((await h.send({ kind: 'START_EXAM', tabId: 1 }, ownPage)).ok, true);
+  assert.equal((await h.send({ kind: 'GET_STATUS' }, ownPage)).result.activeSession.formTabId, 1);
 });
 
 test('navigating the monitored tab away from Forms is recorded', async () => {

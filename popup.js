@@ -37,7 +37,7 @@ function render(state) {
   const high = incidents.filter(item => item.severity === "HIGH").length;
   const medium = incidents.filter(item => item.severity === "MEDIUM").length;
   summary.textContent = session
-    ? `${incidents.length} events · ${high} high · ${medium} medium`
+    ? `${incidents.length} event${incidents.length === 1 ? "" : "s"} · ${high} high · ${medium} medium`
     : "No session recorded.";
 
   incidentList.replaceChildren();
@@ -82,7 +82,16 @@ startButton.addEventListener("click", async () => {
   startButton.disabled = true;
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    const result = await request("START_EXAM", { tabId: tab?.id });
+    let formTab = tab;
+    if (tab?.url === chrome.runtime.getURL("popup.html")) {
+      const candidates = (await chrome.tabs.query({ url: "https://docs.google.com/forms/*" }))
+        .filter(candidate => ExamRules.isSupportedFormUrl(candidate.url));
+      if (candidates.length !== 1) {
+        throw new Error("Keep exactly one Google Form respondent page open to start from this tab.");
+      }
+      [formTab] = candidates;
+    }
+    const result = await request("START_EXAM", { tabId: formTab?.id });
     render(result);
     if (result.fullscreenError) message.textContent = result.fullscreenError;
   } catch (error) {
