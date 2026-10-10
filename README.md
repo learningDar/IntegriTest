@@ -2,7 +2,7 @@
 
 ## PROJECT OVERVIEW
 
-The Chrome extension records observable activity during a Google Forms session and produces a timestamped incident report for teacher review. The browser phase passed a hands-on Chrome demonstration on October 10, 2026. The Windows companion remains planned.
+The Chrome extension records observable activity during a Google Forms session and produces a timestamped incident report for teacher review. The browser phase passed a hands-on Chrome demonstration on October 10, 2026. The Windows companion is implemented and passes automated checks; its live Chrome acceptance gate remains pending.
 
 ## PROBLEM STATEMENT
 
@@ -17,11 +17,11 @@ A Google Forms exam alone provides limited visibility into tab changes, other we
 
 ## SYSTEM FEATURES
 
-**Browser phase, verified in Chrome:** start/end session, tab and webpage events, ChatGPT hostname classification, form focus and fullscreen events, copy/paste attempts, a local incident timeline, and JSON export. Chrome PDF URL classification is implemented and covered by automated checks; its live demonstration is part of Phase 2. Foreground Word/Notepad/PDF-reader classification remains planned for the Windows phase. Question timing, screenshot-key detection, resize events, and CSV export are deferred.
+**Browser phase, verified in Chrome:** start/end session, tab and webpage events, ChatGPT hostname classification, form focus and fullscreen events, copy/paste attempts, a local incident timeline, and JSON export. **Windows phase, implemented and awaiting live acceptance:** foreground categories for Word, Notepad, and mapped PDF readers; host connection status and interruption events. Chrome PDF URL classification is covered by automated checks and awaits its live demonstration. Question timing, screenshot-key detection, resize events, and CSV export are deferred.
 
 ## SYSTEM ARCHITECTURE / COMPONENTS
 
-The Manifest V3 extension has a Google Forms content script, a service worker for session and browser events, and a popup for control and reporting. `chrome.storage.local` holds local sessions and incidents. A C# Windows native messaging host is planned to supply foreground app categories. No remote backend is planned for this deadline.
+The Manifest V3 extension has a Google Forms content script, a service worker for session and browser events, and a popup for control and reporting. `chrome.storage.local` holds local sessions and incidents. A C# native messaging host polls the Windows foreground process and sends only an app category and timestamp to the service worker. The host has no independent report storage. There is no remote backend.
 
 ## SYSTEM WORKFLOW
 
@@ -29,19 +29,19 @@ The student opens a supported Google Form, starts monitoring in the popup, and t
 
 ## TOOLS & TECHNOLOGIES
 
-Current: Google Chrome, Chrome Extension Manifest V3, vanilla JavaScript/HTML/CSS, Chrome storage API, and Node.js built-in test runner. Planned: Windows, Chrome native messaging API, and a minimal C# host compiled with the available .NET Framework compiler. Git and GitHub hold the project source.
+Google Chrome, Chrome Extension Manifest V3, vanilla JavaScript/HTML/CSS, Chrome storage and native messaging APIs, Windows, a minimal C# host compiled with the .NET Framework compiler, Node.js built-in test runner, Git, and GitHub.
 
 ## INSTALLATION / SETUP
 
-For a browser-phase trial, open `chrome://extensions` in Chrome, enable Developer mode, choose **Load unpacked**, and select this repository folder. Open a Google Forms respondent URL ending in `/viewform`, then use the pinned extension popup. If the popup cannot be operated by an accessibility tool, the same control page can be opened at `chrome-extension://<extension-id>/popup.html` in another tab while exactly one supported Form is open. Find the unpacked extension ID on `chrome://extensions`. Refresh the Form after reloading the extension so its content script is current. Native host compilation and registration steps will be added after the Windows component is built and tested.
+Open `chrome://extensions` in Chrome, enable Developer mode, choose **Load unpacked**, and select this repository folder. Copy the unpacked extension ID. From PowerShell in the repository root, run `powershell -NoProfile -ExecutionPolicy Bypass -File native-host\install.ps1 -ExtensionId YOUR_EXTENSION_ID`, replacing `YOUR_EXTENSION_ID` with that ID. The script compiles the host with `C:\Windows\Microsoft.NET\Framework\v4.0.30319\csc.exe`, writes an ignored native host manifest, and registers it under the current user's Chrome native messaging registry key. Reload the extension and refresh the Form after a code or permission change. Open a Google Forms respondent URL ending in `/viewform`, then use the pinned popup. The control page can also be opened at `chrome-extension://YOUR_EXTENSION_ID/popup.html` in another tab while exactly one supported Form is open. The Windows setup has been compiled and registered on the development machine; live extension-to-host connection is still awaiting acceptance.
 
 ## USER GUIDE
 
-On a supported Google Form respondent page, open the popup and select **Start Examination**. Chrome enters fullscreen; the popup shows the session status and incident timeline. **End Examination** closes recording, and **Export JSON** downloads the local report. The popup currently states that desktop monitoring is planned for Phase 2. An incident is an observation for review, not a cheating verdict.
+On a supported Google Form respondent page, open the popup and select **Start Examination**. Chrome enters fullscreen; the popup shows session and desktop connection status plus the incident timeline. Bring another webpage, ChatGPT, Word, Notepad, or a supported PDF reader to the foreground to produce observable signals. **End Examination** closes recording, and **Export JSON** downloads the local report. Desktop app signals mean an app became active, not that a document was read. An incident is an observation for review, not a cheating verdict.
 
 ## QUALITY ASSURANCE & TESTING
 
-Phase gates and required demonstrations are defined in `GOOGLE_FORMS_EXAM_MONITOR_MVP_CONTEXT.md`. Run `node --test tests/browser.test.js` for repeatable browser logic checks. Use `tests/MANUAL_BROWSER.md` for the required Chrome acceptance check. Desktop-host interruption and foreground-app testing follow in Phase 2.
+Phase gates and required demonstrations are defined in `GOOGLE_FORMS_EXAM_MONITOR_MVP_CONTEXT.md`. Run `node --test tests/browser.test.js tests/host.test.js` for repeatable extension and native-host checks. Use `tests/MANUAL_BROWSER.md` and `tests/MANUAL_DESKTOP.md` for the required Chrome and Windows acceptance checks. Automated checks do not replace the live desktop gate.
 
 ## TEST RESULTS
 
@@ -53,13 +53,15 @@ Phase 1 manual gate (October 10, 2026; Windows, Chrome 154.0.8037.98): the unpac
 
 During testing, Chrome showed an `Extension context invalidated` error from a Form content script left open across an extension reload. The content script now catches that synchronous error; the Form was refreshed before the copy/paste retest. A separate clean-reload check of that fix is pending.
 
+Phase 2 implementation checks (October 11, 2026; Windows, Node.js 22.19.0): `node --test tests/browser.test.js tests/host.test.js` passed 12/12. The extension tests covered native message validation, category-only incident fields, end-of-session boundaries, host disconnect/interruption, and continued browser recording. The host test compiled the C# executable, read its length-prefixed `READY` and `FOREGROUND_CHANGED` frames, confirmed the category-only fields, and sent `STOP` for a clean exit. The generated host manifest allows this development machine's unpacked extension ID, and the current-user Chrome registry entry points to it. Live Word, Notepad, Acrobat, Chrome PDF, disconnect, and post-End demonstrations are still pending; Phase 2 is not yet accepted.
+
 ## LIMITATIONS
 
 Opening ChatGPT does not prove its use. A foreground app event does not prove a document was opened or read. Another browser or device, unsupported PDF viewer, and some Chrome PDF locations may be unobservable. The local report is a prototype record, not tamper-proof evidence.
 
 ## CONCLUSION
 
-The browser phase is ready for the MVP demonstration. The Windows foreground-monitoring phase and its acceptance gate remain pending.
+The browser phase is ready for the MVP demonstration. The Windows component is implemented, but its live acceptance gate remains pending.
 
 ## APPENDICES
 
@@ -67,3 +69,4 @@ The browser phase is ready for the MVP demonstration. The Windows foreground-mon
 - Original context: Git `main`
 - Project workflows: `.agents/skills/` and `AGENTS.md`
 - Browser manual check: `tests/MANUAL_BROWSER.md`
+- Desktop manual check: `tests/MANUAL_DESKTOP.md`

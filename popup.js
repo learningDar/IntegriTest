@@ -28,7 +28,13 @@ function render(state) {
   sessionDetail.textContent = session
     ? `${active ? "Started" : "Last session"}: ${formatTime(session.startedAt)} · ID ${session.id.slice(0, 8)}`
     : "Open a Google Form respondent page to start.";
-  desktopDetail.textContent = "Desktop monitor: planned for Phase 2";
+  const desktopLabels = {
+    IDLE: "Desktop monitor: idle",
+    CONNECTING: "Desktop monitor: connecting",
+    CONNECTED: "Desktop monitor: connected",
+    DISCONNECTED: "Desktop monitor: disconnected; browser monitoring continues"
+  };
+  desktopDetail.textContent = desktopLabels[state.desktopStatus] || "Desktop monitor: status unavailable";
   startButton.disabled = active;
   endButton.disabled = !active;
   exportButton.disabled = !session;

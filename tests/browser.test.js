@@ -4,12 +4,14 @@ const path = require('node:path');
 const test = require('node:test');
 const vm = require('node:vm');
 const rules = require('../rules.js');
+const desktop = require('../desktop.js');
 const { buildReport } = require('../report.js');
 
 const formUrl = 'https://docs.google.com/forms/d/e/demo/viewform';
 
 function harness(stored = {}) {
   const listeners = {};
+  const nativePorts = [];
   const tabs = new Map([[1, { id: 1, windowId: 7, active: true, url: formUrl }]]);
   const windows = new Map([[7, { id: 7, focused: true, state: 'normal' }]]);
   const event = name => ({ addListener(listener) { listeners[name] = listener; } });
@@ -30,13 +32,29 @@ function harness(stored = {}) {
     },
     runtime: {
       getURL(file) { return `chrome-extension://demo/${file}`; },
-      onMessage: event('message')
+      onMessage: event('message'),
+      connectNative(name) {
+        assert.equal(name, 'com.learningdar.exam_monitor');
+        const handlers = {};
+        const port = {
+          onMessage: { addListener(listener) { handlers.message = listener; } },
+          onDisconnect: { addListener(listener) { handlers.disconnect = listener; } },
+          postMessage(message) { port.lastPosted = message; },
+          disconnect() { handlers.disconnect?.(); },
+          emit(message) { handlers.message(message); },
+          drop() { handlers.disconnect(); }
+        };
+        nativePorts.push(port);
+        return port;
+      }
     }
   };
   const context = vm.createContext({
     chrome, crypto, URL, Date, Promise, Number, Set, console,
-    setTimeout, importScripts(file) {
-      vm.runInContext(readFileSync(path.join(__dirname, '..', file), 'utf8'), context, { filename: file });
+    setTimeout, clearTimeout, importScripts(...files) {
+      for (const file of files) {
+        vm.runInContext(readFileSync(path.join(__dirname, '..', file), 'utf8'), context, { filename: file });
+      }
     }
   });
   vm.runInContext(readFileSync(path.join(__dirname, '../background.js'), 'utf8'), context, { filename: 'background.js' });
@@ -44,7 +62,7 @@ function harness(stored = {}) {
     return new Promise(resolve => listeners.message(message, sender, resolve));
   }
   async function flush() { await new Promise(resolve => setTimeout(resolve, 15)); }
-  return { send, flush, tabs, windows, listeners, stored };
+  return { send, flush, tabs, windows, listeners, stored, nativePorts };
 }
 
 test('supported Form URLs and browser categories keep only hostnames', () => {
@@ -191,4 +209,51 @@ test('Chrome window focus and fullscreen transitions produce review signals', as
   for (const type of ['FULLSCREEN_EXITED', 'FULLSCREEN_RESTORED', 'WINDOW_FOCUS_LOST', 'WINDOW_FOCUS_RESTORED']) {
     assert.equal(incidents.filter(x => x.type === type).length, 1, type);
   }
+});
+
+test('Windows host categories are validated, private, and session-bound', async () => {
+  const h = harness();
+  await h.send({ kind: 'START_EXAM', tabId: 1 });
+  const port = h.nativePorts[0];
+  const timestamp = new Date().toISOString();
+  port.emit({ kind: 'READY', timestamp });
+  port.emit({ kind: 'FOREGROUND_CHANGED', appCategory: 'WORD', timestamp });
+  port.emit({ kind: 'FOREGROUND_CHANGED', appCategory: 'NOTEPAD', timestamp });
+  port.emit({ kind: 'FOREGROUND_CHANGED', appCategory: 'PDF_READER', timestamp });
+  port.emit({ kind: 'FOREGROUND_CHANGED', appCategory: 'OTHER', timestamp });
+  port.emit({ kind: 'FOREGROUND_CHANGED', appCategory: 'WINWORD.EXE', timestamp });
+  await h.flush();
+  const state = (await h.send({ kind: 'GET_STATUS' })).result;
+  assert.equal(state.desktopStatus, 'CONNECTED');
+  const appIncidents = state.incidents.filter(x => x.type === 'DESKTOP_APP_ACTIVE');
+  assert.deepEqual(appIncidents.map(x => x.appCategory), ['WORD', 'NOTEPAD', 'PDF_READER']);
+  assert.ok(appIncidents.every(x => x.source === 'WINDOWS_HOST' && x.hostname === null));
+  assert.ok(!JSON.stringify(state).includes('WINWORD.EXE'));
+  assert.equal(desktop.validateHostMessage({ kind: 'FOREGROUND_CHANGED', appCategory: 'WORD', timestamp: 'invalid' }), null);
+
+  await h.send({ kind: 'END_EXAM' });
+  port.emit({ kind: 'FOREGROUND_CHANGED', appCategory: 'WORD', timestamp });
+  await h.flush();
+  assert.equal((await h.send({ kind: 'GET_STATUS' })).result.incidents.length, state.incidents.length + 1);
+});
+
+test('native-host disconnect records one interruption and browser monitoring continues', async () => {
+  const h = harness();
+  await h.send({ kind: 'START_EXAM', tabId: 1 });
+  const port = h.nativePorts[0];
+  port.emit({ kind: 'READY', timestamp: new Date().toISOString() });
+  await h.flush();
+  port.drop();
+  await h.flush();
+  const disconnected = (await h.send({ kind: 'GET_STATUS' })).result;
+  assert.equal(disconnected.desktopStatus, 'DISCONNECTED');
+  const interruptions = disconnected.incidents.filter(x => x.type === 'MONITORING_INTERRUPTED');
+  assert.equal(interruptions.length, 1);
+  assert.equal(interruptions[0].source, 'WINDOWS_HOST');
+  assert.equal(interruptions[0].appCategory, null);
+  h.tabs.set(2, { id: 2, windowId: 7, active: true, url: 'https://example.org/' });
+  h.listeners.activated({ tabId: 2 });
+  await h.flush();
+  assert.equal((await h.send({ kind: 'GET_STATUS' })).result.incidents.at(-1).type, 'WEBPAGE_OPENED');
+  await h.send({ kind: 'END_EXAM' });
 });

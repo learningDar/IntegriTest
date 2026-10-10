@@ -1,7 +1,8 @@
-importScripts("rules.js");
+importScripts("rules.js", "desktop.js");
 
 const STORAGE_KEY = "monitorState";
 const DEDUP_MS = 1200;
+const NATIVE_HOST = "com.learningdar.exam_monitor";
 const ALLOWED_CONTENT_EVENTS = new Set([
   "FORM_HIDDEN", "FORM_VISIBLE", "FORM_FOCUS_LOST", "FORM_FOCUS_RESTORED",
   "FULLSCREEN_EXITED", "FULLSCREEN_RESTORED", "COPY_ATTEMPT", "PASTE_ATTEMPT"
@@ -19,6 +20,8 @@ const CONTENT_LABELS = {
   PASTE_ATTEMPT: ["HIGH", "Paste attempted in Google Form"]
 };
 let operationQueue = Promise.resolve();
+let nativePort = null;
+let nativeRetryTimer = null;
 
 function exclusive(operation) {
   const next = operationQueue.then(operation, operation);
@@ -28,7 +31,9 @@ function exclusive(operation) {
 
 async function readState() {
   const stored = await chrome.storage.local.get(STORAGE_KEY);
-  return stored[STORAGE_KEY] || { activeSession: null, lastSession: null, incidents: [] };
+  return stored[STORAGE_KEY] || {
+    activeSession: null, lastSession: null, incidents: [], desktopStatus: "IDLE"
+  };
 }
 
 async function writeState(state) {
@@ -39,15 +44,15 @@ function makeIncident(sessionId, type, severity, details, extras = {}) {
   return {
     id: crypto.randomUUID(),
     sessionId,
-    timestamp: new Date().toISOString(),
+    timestamp: extras.timestamp ?? new Date().toISOString(),
     type,
     severity,
     details,
     durationMs: null,
     questionNumber: null,
     domainCategory: extras.domainCategory ?? null,
-    source: "CHROME",
-    appCategory: null,
+    source: extras.source ?? "CHROME",
+    appCategory: extras.appCategory ?? null,
     hostname: extras.hostname ?? null
   };
 }
@@ -58,14 +63,17 @@ function addIncident(state, type, severity, details, extras = {}) {
   const previous = state.incidents[state.incidents.length - 1];
   const now = Date.now();
   if (previous && previous.type === type && previous.hostname === (extras.hostname ?? null) &&
+      previous.source === (extras.source ?? "CHROME") &&
+      previous.appCategory === (extras.appCategory ?? null) &&
       now - Date.parse(previous.timestamp) < DEDUP_MS) return false;
-  state.incidents.push(makeIncident(session.id, type, severity, details, extras));
+  const incident = makeIncident(session.id, type, severity, details, extras);
+  if (previous && incident.timestamp < previous.timestamp) incident.timestamp = previous.timestamp;
+  state.incidents.push(incident);
   return true;
 }
 
 async function status() {
-  const state = await readState();
-  return { ...state, desktopStatus: "PENDING_PHASE_2" };
+  return readState();
 }
 
 async function startExam(tabId) {
@@ -82,11 +90,13 @@ async function startExam(tabId) {
       windowId: tab.windowId,
       startedAt: new Date().toISOString(),
       endedAt: null,
-      fullscreenState: null
+      fullscreenState: null,
+      desktopInterruptionRecorded: false
     };
     state.activeSession = session;
     state.lastSession = null;
     state.incidents = [];
+    state.desktopStatus = "CONNECTING";
     addIncident(state, "EXAM_STARTED", "LOW", "Exam session started");
     await writeState(state);
     return session;
@@ -99,20 +109,24 @@ async function startExam(tabId) {
   } catch {
     fullscreenError = "Chrome could not enter fullscreen; enter it manually.";
   }
+  connectNativeHost();
   return { ...(await status()), fullscreenError };
 }
 
 async function endExam() {
-  return exclusive(async () => {
+  const ended = await exclusive(async () => {
     const state = await readState();
     if (!state.activeSession) throw new Error("No examination is active.");
     addIncident(state, "EXAM_ENDED", "LOW", "Exam session ended");
     state.activeSession.endedAt = new Date().toISOString();
     state.lastSession = state.activeSession;
     state.activeSession = null;
+    state.desktopStatus = "IDLE";
     await writeState(state);
-    return { ...state, desktopStatus: "PENDING_PHASE_2" };
+    return state;
   });
+  disconnectNativeHost();
+  return ended;
 }
 
 async function record(type, severity, details, extras) {
@@ -121,6 +135,83 @@ async function record(type, severity, details, extras) {
     if (!addIncident(state, type, severity, details, extras)) return;
     await writeState(state);
   });
+}
+
+function scheduleNativeReconnect() {
+  if (nativeRetryTimer) return;
+  nativeRetryTimer = setTimeout(async () => {
+    nativeRetryTimer = null;
+    const state = await readState();
+    if (state.activeSession && !nativePort) connectNativeHost();
+  }, 5000);
+}
+
+async function markDesktopDisconnected() {
+  await exclusive(async () => {
+    const state = await readState();
+    if (!state.activeSession) return;
+    state.desktopStatus = "DISCONNECTED";
+    if (!state.activeSession.desktopInterruptionRecorded) {
+      addIncident(state, "MONITORING_INTERRUPTED", "HIGH",
+        "Windows desktop monitoring disconnected; browser monitoring continues",
+        { source: "WINDOWS_HOST" });
+      state.activeSession.desktopInterruptionRecorded = true;
+    }
+    await writeState(state);
+  });
+}
+
+async function handleNativeMessage(port, rawMessage) {
+  if (port !== nativePort) return;
+  const message = ExamDesktop.validateHostMessage(rawMessage);
+  if (!message) return;
+  await exclusive(async () => {
+    const state = await readState();
+    if (!state.activeSession) return;
+    state.desktopStatus = "CONNECTED";
+    state.activeSession.desktopInterruptionRecorded = false;
+    if (message.kind === "FOREGROUND_CHANGED" && message.appCategory !== "OTHER") {
+      addIncident(state, "DESKTOP_APP_ACTIVE", "MEDIUM",
+        ExamDesktop.LABELS[message.appCategory], {
+          source: "WINDOWS_HOST",
+          appCategory: message.appCategory,
+          timestamp: message.timestamp
+        });
+    }
+    await writeState(state);
+  });
+}
+
+function connectNativeHost() {
+  if (nativePort) return;
+  let port;
+  try {
+    port = chrome.runtime.connectNative(NATIVE_HOST);
+  } catch {
+    markDesktopDisconnected().catch(console.error);
+    scheduleNativeReconnect();
+    return;
+  }
+  nativePort = port;
+  port.onMessage.addListener(message => {
+    handleNativeMessage(port, message).catch(console.error);
+  });
+  port.onDisconnect.addListener(() => {
+    if (port !== nativePort) return;
+    nativePort = null;
+    markDesktopDisconnected().catch(console.error);
+    scheduleNativeReconnect();
+  });
+}
+
+function disconnectNativeHost() {
+  if (nativeRetryTimer) clearTimeout(nativeRetryTimer);
+  nativeRetryTimer = null;
+  const port = nativePort;
+  nativePort = null;
+  if (!port) return;
+  try { port.postMessage({ kind: "STOP" }); } catch { /* Host may already be gone. */ }
+  try { port.disconnect(); } catch { /* Host may already be gone. */ }
 }
 
 async function handleTab(tabId) {
@@ -225,3 +316,7 @@ chrome.windows.onFocusChanged.addListener(async windowId => {
 chrome.windows.onBoundsChanged.addListener(windowInfo => {
   checkFullscreen(windowInfo.id).catch(console.error);
 });
+
+readState().then(state => {
+  if (state.activeSession) connectNativeHost();
+}).catch(console.error);
