@@ -11,6 +11,9 @@ h2 { font-size: 14px; }
 .status-panel { padding: 14px; background: white; border: 1px solid #dde4ef; border-radius: 12px; box-shadow: 0 1px 3px #1725540d; }
 .status-row, .report-header, .actions { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .status-panel .detail { margin-top: 8px; }
+.fullscreen-option { display: flex; align-items: center; gap: 7px; margin-top: 12px; font-size: 12px; font-weight: 700; cursor: pointer; }
+.fullscreen-option input { margin: 0; accent-color: #1d4ed8; }
+.fullscreen-option:has(input:disabled) { opacity: .55; cursor: default; }
 .badge { display: inline-block; padding: 4px 9px; border-radius: 999px; background: #e7ebf2; color: #46546b; font-size: 11px; font-weight: 700; }
 .badge.active { background: #dcfce7; color: #166534; }
 .actions { margin-top: 14px; }

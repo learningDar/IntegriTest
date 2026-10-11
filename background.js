@@ -15,7 +15,7 @@ const CONTENT_LABELS = {
   WINDOW_FOCUS_LOST: ["LOW", "Examination window lost focus"],
   WINDOW_FOCUS_RESTORED: ["LOW", "Examination window regained focus"],
   FULLSCREEN_EXITED: ["MEDIUM", "Fullscreen exited"],
-  FULLSCREEN_RESTORED: ["LOW", "Fullscreen restored"],
+  FULLSCREEN_RESTORED: ["LOW", "Fullscreen entered or restored"],
   COPY_ATTEMPT: ["MEDIUM", "Copy attempted in Google Form"],
   PASTE_ATTEMPT: ["HIGH", "Paste attempted in Google Form"]
 };
@@ -76,7 +76,7 @@ async function status() {
   return readState();
 }
 
-async function startExam(tabId) {
+async function startExam(tabId, useFullscreen = true) {
   if (!Number.isInteger(tabId)) throw new Error("Open a Google Form respondent page first.");
   const tab = await chrome.tabs.get(tabId);
   if (!ExamRules.isSupportedFormUrl(tab.url)) throw new Error("Open a supported Google Form respondent page first.");
@@ -91,6 +91,7 @@ async function startExam(tabId) {
       startedAt: new Date().toISOString(),
       endedAt: null,
       fullscreenState: null,
+      fullscreenRequested: Boolean(useFullscreen),
       windowFocusState: "FOCUSED",
       desktopInterruptionRecorded: false
     };
@@ -105,10 +106,14 @@ async function startExam(tabId) {
 
   let fullscreenError = null;
   try {
-    await chrome.windows.update(result.windowId, { state: "fullscreen" });
+    await chrome.windows.update(result.windowId, {
+      state: useFullscreen ? "fullscreen" : "normal"
+    });
     await checkFullscreen(result.windowId);
   } catch {
-    fullscreenError = "Chrome could not enter fullscreen; enter it manually.";
+    fullscreenError = useFullscreen
+      ? "Chrome could not enter fullscreen; enter it manually."
+      : "Chrome could not check fullscreen status.";
   }
   connectNativeHost();
   return { ...(await status()), fullscreenError };
@@ -252,7 +257,7 @@ async function checkFullscreen(windowId) {
     const previous = state.activeSession.fullscreenState;
     state.activeSession.fullscreenState = current;
     if (previous && previous !== current) {
-      if (current === "fullscreen") addIncident(state, "FULLSCREEN_RESTORED", "LOW", "Fullscreen restored");
+      if (current === "fullscreen") addIncident(state, "FULLSCREEN_RESTORED", "LOW", "Fullscreen entered or restored");
       else addIncident(state, "FULLSCREEN_EXITED", "MEDIUM", "Fullscreen exited");
     }
     await writeState(state);
@@ -292,7 +297,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       }
       switch (message?.kind) {
         case "GET_STATUS": result = await status(); break;
-        case "START_EXAM": result = await startExam(message.tabId); break;
+        case "START_EXAM": result = await startExam(message.tabId, message.fullscreen !== false); break;
         case "END_EXAM": result = await endExam(); break;
         case "CONTENT_EVENT": await handleContent(message.type, sender); result = { ok: true }; break;
         default: throw new Error("Unknown message.");

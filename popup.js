@@ -5,6 +5,7 @@ const message = document.getElementById("message");
 const statusBadge = document.getElementById("status-badge");
 const sessionDetail = document.getElementById("session-detail");
 const desktopDetail = document.getElementById("desktop-detail");
+const fullscreenChoice = document.getElementById("fullscreen-choice");
 const summary = document.getElementById("report-summary");
 const incidentList = document.getElementById("incidents");
 let currentState = null;
@@ -36,6 +37,8 @@ function render(state) {
   };
   desktopDetail.textContent = desktopLabels[state.desktopStatus] || "Desktop monitor: status unavailable";
   startButton.disabled = active;
+  if (active) fullscreenChoice.checked = state.activeSession.fullscreenRequested !== false;
+  fullscreenChoice.disabled = active;
   endButton.disabled = !active;
   exportButton.disabled = !session;
 
@@ -97,7 +100,10 @@ startButton.addEventListener("click", async () => {
       }
       [formTab] = candidates;
     }
-    const result = await request("START_EXAM", { tabId: formTab?.id });
+    const result = await request("START_EXAM", {
+      tabId: formTab?.id,
+      fullscreen: fullscreenChoice.checked
+    });
     render(result);
     if (result.fullscreenError) message.textContent = result.fullscreenError;
   } catch (error) {

@@ -218,6 +218,25 @@ test('Chrome window focus and fullscreen transitions produce review signals', as
   }
 });
 
+test('normal-window start keeps Chrome controls visible and still records fullscreen changes', async () => {
+  const h = harness();
+  const started = await h.send({ kind: 'START_EXAM', tabId: 1, fullscreen: false });
+  assert.equal(started.ok, true);
+  assert.equal(h.windows.get(7).state, 'normal');
+  assert.equal(started.result.activeSession.fullscreenState, 'other');
+  assert.equal(started.result.activeSession.fullscreenRequested, false);
+
+  h.windows.get(7).state = 'fullscreen';
+  h.listeners.boundsChanged(h.windows.get(7));
+  await h.flush();
+  h.windows.get(7).state = 'normal';
+  h.listeners.boundsChanged(h.windows.get(7));
+  await h.flush();
+  const incidents = (await h.send({ kind: 'GET_STATUS' })).result.incidents;
+  assert.equal(incidents.filter(x => x.type === 'FULLSCREEN_RESTORED').length, 1);
+  assert.equal(incidents.filter(x => x.type === 'FULLSCREEN_EXITED').length, 1);
+});
+
 test('Windows host categories are validated, private, and session-bound', async () => {
   const h = harness();
   await h.send({ kind: 'START_EXAM', tabId: 1 });

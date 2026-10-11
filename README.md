@@ -17,7 +17,7 @@ A Google Forms exam alone provides limited visibility into tab changes, other we
 
 ## SYSTEM FEATURES
 
-**Browser phase, verified in Chrome:** start/end session, tab and webpage events, ChatGPT hostname classification, form focus and fullscreen events, copy/paste attempts, a local incident timeline, and JSON export. **Windows phase, implemented and awaiting live acceptance:** foreground categories for Word, Notepad, and mapped PDF readers; host connection status and interruption events. Chrome PDF URL classification is covered by automated checks and awaits its live demonstration. Question timing, screenshot-key detection, resize events, and CSV export are deferred.
+**Browser phase, verified in Chrome:** start/end session, tab and webpage events, ChatGPT hostname classification, form focus and fullscreen events, copy/paste attempts, a local incident timeline, and JSON export. A new **Start in fullscreen** checkbox keeps the original fullscreen behavior by default and allows a normal Chrome window; this choice has passed automated checks and awaits a fresh Chrome check. **Windows phase, implemented and awaiting live acceptance:** foreground categories for Word, Notepad, and mapped PDF readers; host connection status and interruption events. Chrome PDF URL classification has been observed in a partial live report. Question timing, screenshot-key detection, resize events, and CSV export are deferred.
 
 ## SYSTEM ARCHITECTURE / COMPONENTS
 
@@ -37,7 +37,7 @@ Open `chrome://extensions` in Chrome, enable Developer mode, choose **Load unpac
 
 ## USER GUIDE
 
-On a supported Google Form respondent page, open the popup and select **Start Examination**. Chrome enters fullscreen; the popup shows session and desktop connection status plus the incident timeline. Bring another webpage, ChatGPT, Word, Notepad, or a supported PDF reader to the foreground to produce observable signals. **End Examination** closes recording, and **Export JSON** downloads the local report. Desktop app signals mean an app became active, not that a document was read. An incident is an observation for review, not a cheating verdict.
+On a supported Google Form respondent page, open the popup. **Start in fullscreen** is checked by default; uncheck it before **Start Examination** to keep Chrome tabs and window controls visible. In fullscreen, Ctrl+Tab changes Chrome tabs and F11 exits fullscreen; changes are recorded. The popup shows session and desktop connection status plus the incident timeline. Bring another webpage, ChatGPT, Word, Notepad, or a supported PDF reader to the foreground to produce observable signals. **End Examination** closes recording, and **Export JSON** downloads the local report. Desktop app signals mean an app became active, not that a document was read. An incident is an observation for review, not a cheating verdict.
 
 ## QUALITY ASSURANCE & TESTING
 
@@ -55,7 +55,9 @@ During testing, Chrome showed an `Extension context invalidated` error from a Fo
 
 Phase 2 implementation checks (October 11, 2026; Windows, Node.js 22.19.0): `node --test tests/browser.test.js tests/host.test.js` passed 12/12. The extension tests covered native message validation, category-only incident fields, end-of-session boundaries, host disconnect/interruption, and continued browser recording. The host test compiled the C# executable, read its length-prefixed `READY` and `FOREGROUND_CHANGED` frames, confirmed the category-only fields, and sent `STOP` for a clean exit. The generated host manifest allows this development machine's unpacked extension ID, and the current-user Chrome registry entry points to it.
 
-Phase 2 partial live report review (October 11, 2026): a locally exported 28-incident session contained Windows-host events for Word and Notepad, a Chrome PDF event for `www.w3.org`, one native-host interruption, and another Word event after the interruption. All incidents shared the session ID and were chronological; the JSON contained no full URLs or Windows file paths. It did not contain a `PDF_READER` incident, so the dedicated-reader demonstration is still pending. Repeated `WINDOW_FOCUS_LOST` events without intervening restoration exposed a duplicate-signal defect. The service worker now records focus transitions. The export also contained internal tab and window IDs; the report builder now omits them. All 12 automated checks pass after these fixes. A fresh Chrome run is needed to verify them and the remaining desktop gate.
+Phase 2 partial live report review (October 11, 2026): a locally exported 28-incident session contained Windows-host events for Word and Notepad, a Chrome PDF event for `www.w3.org`, one native-host interruption, and another Word event after the interruption. All incidents shared the session ID and were chronological; the JSON contained no full URLs or Windows file paths. It did not contain a `PDF_READER` incident, so the dedicated-reader demonstration is still pending. Repeated `WINDOW_FOCUS_LOST` events without intervening restoration exposed a duplicate-signal defect. The service worker now records focus transitions. The export also contained internal tab and window IDs; the report builder now omits them. A fresh Chrome run is needed to verify these fixes and the remaining desktop gate.
+
+Browser adjustment checks (October 11, 2026; Windows, Node.js 22.19.0): `node --test tests/browser.test.js tests/host.test.js` passed 13/13 after adding the normal-window option. The new check confirms a normal start keeps Chrome's window state normal while later fullscreen entry and exit still create incidents. `node --check` passed for the changed JavaScript. The updated popup and browser flow await a hands-on Chrome run.
 
 ## LIMITATIONS
 
