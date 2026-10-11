@@ -1,6 +1,6 @@
 # Phase 1 Chrome acceptance check
 
-Use a practice Google Form with no real student answers. Load this repository as an unpacked extension from `chrome://extensions` in Developer mode. Record the Chrome version, date, and the observed result for every item before accepting Phase 1.
+Use the [10-question Systems Integration and Architecture Fundamentals practice quiz](https://docs.google.com/forms/d/e/1FAIpQLSdOyiXOUU2YWqp2RFh6SR_-dPf8ZmixAjrT7bZ4EE0TnS7oVQ/viewform) with dummy answers. Load this repository as an unpacked extension from `chrome://extensions` in Developer mode. Record the Chrome version, date, and the observed result for every item before accepting Phase 1.
 
 After each code update, click Reload on the extension card, refresh the Form, and reopen the monitor popup. Confirm the header displays the version in `manifest.json` (currently `v0.1.2`) before starting a new session. Open the test sites in a tab during the active session; a new tab may remain in the background, but its URL update should be recorded. Activate the tab as a separate check for duplicates.
 
