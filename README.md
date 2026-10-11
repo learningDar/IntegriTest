@@ -2,7 +2,7 @@
 
 ## PROJECT OVERVIEW
 
-The Chrome extension records observable activity during a Google Forms session and produces a timestamped incident report for teacher review. The browser phase passed a hands-on Chrome demonstration on October 10, 2026, and its webpage, ChatGPT, and Chrome PDF signals passed a fresh `v0.1.2` regression run on October 11. The Windows companion is implemented and passes automated checks; its full live acceptance gate remains pending.
+The Chrome extension records observable activity during a Google Forms session and produces a timestamped incident report for teacher review. The browser phase passed a hands-on Chrome demonstration on October 10, 2026, and its webpage, ChatGPT, and Chrome PDF signals passed a fresh `v0.1.2` regression run on October 11. The Windows companion and full desktop acceptance gate passed on October 11 with Adobe Acrobat as the verified PDF reader.
 
 ## PROBLEM STATEMENT
 
@@ -17,7 +17,7 @@ A Google Forms exam alone provides limited visibility into tab changes, other we
 
 ## SYSTEM FEATURES
 
-**Browser phase, verified in Chrome:** start/end session, tab and webpage events, ChatGPT hostname classification, Chrome PDF URL classification, form focus and fullscreen events, copy/paste attempts, a local incident timeline, and JSON export. **Start in fullscreen** is checked by default; unchecking it starts a normal Chrome window. A normal-window session was used in the October 11 live regression run, and fullscreen transitions passed automated checks. **Windows phase, implemented and awaiting full live acceptance:** foreground categories for Word, Notepad, and mapped PDF readers; host connection status and interruption events. Question timing, screenshot-key detection, resize events, and CSV export are deferred.
+**Browser phase, verified in Chrome:** start/end session, tab and webpage events, ChatGPT hostname classification, Chrome PDF URL classification, form focus and fullscreen events, copy/paste attempts, a local incident timeline, and JSON export. **Start in fullscreen** is checked by default; unchecking it starts a normal Chrome window. A normal-window session was used in the October 11 live regression run, and fullscreen transitions passed automated checks. **Windows phase, verified on this machine:** foreground categories for Microsoft Word, Windows Notepad, and Adobe Acrobat; native-host connection, interruption, and recovery. Foxit and SumatraPDF mappings exist in code but have not been demonstrated on this machine. Question timing, screenshot-key detection, resize events, and CSV export are deferred.
 
 ## SYSTEM ARCHITECTURE / COMPONENTS
 
@@ -33,7 +33,7 @@ Google Chrome, Chrome Extension Manifest V3, vanilla JavaScript/HTML/CSS, Chrome
 
 ## INSTALLATION / SETUP
 
-Open `chrome://extensions` in Chrome, enable Developer mode, choose **Load unpacked**, and select this repository folder. Copy the unpacked extension ID. From PowerShell in the repository root, run `powershell -NoProfile -ExecutionPolicy Bypass -File native-host\install.ps1 -ExtensionId YOUR_EXTENSION_ID`, replacing `YOUR_EXTENSION_ID` with that ID. The script compiles the host with `C:\Windows\Microsoft.NET\Framework\v4.0.30319\csc.exe`, writes an ignored native host manifest, and registers it under the current user's Chrome native messaging registry key. Reload the extension and refresh the Form after a code or permission change; confirm the popup header shows the version in `manifest.json`. Open a Google Forms respondent URL ending in `/viewform`, then use the pinned popup. The control page can also be opened at `chrome-extension://YOUR_EXTENSION_ID/popup.html` in another tab while exactly one supported Form is open. The Windows setup has been compiled and registered on the development machine; its dedicated PDF-reader demonstration remains pending.
+Open `chrome://extensions` in Chrome, enable Developer mode, choose **Load unpacked**, and select this repository folder. Copy the unpacked extension ID. From PowerShell in the repository root, run `powershell -NoProfile -ExecutionPolicy Bypass -File native-host\install.ps1 -ExtensionId YOUR_EXTENSION_ID`, replacing `YOUR_EXTENSION_ID` with that ID. The script compiles the host with `C:\Windows\Microsoft.NET\Framework\v4.0.30319\csc.exe`, writes an ignored native host manifest, and registers it under the current user's Chrome native messaging registry key. Reload the extension and refresh the Form after a code or permission change; confirm the popup header shows the version in `manifest.json`. Open a Google Forms respondent URL ending in `/viewform`, then use the pinned popup. The control page can also be opened at `chrome-extension://YOUR_EXTENSION_ID/popup.html` in another tab while exactly one supported Form is open. The development machine's extension ID is `ohhphckdheaeodppedfkbnljdfdoechd`; its host registration and live connection were verified on October 11.
 
 ## USER GUIDE
 
@@ -41,7 +41,7 @@ On a supported Google Form respondent page, open the popup. **Start in fullscree
 
 ## QUALITY ASSURANCE & TESTING
 
-Phase gates and required demonstrations are defined in `GOOGLE_FORMS_EXAM_MONITOR_MVP_CONTEXT.md`. Run `node --test tests/browser.test.js tests/host.test.js` for repeatable extension and native-host checks. Use `tests/MANUAL_BROWSER.md` and `tests/MANUAL_DESKTOP.md` for the required Chrome and Windows acceptance checks. Automated checks do not replace the live desktop gate.
+Phase gates and required demonstrations are defined in `GOOGLE_FORMS_EXAM_MONITOR_MVP_CONTEXT.md`. Run `node --test tests/browser.test.js tests/host.test.js` for repeatable extension and native-host checks. Use `tests/MANUAL_BROWSER.md` and `tests/MANUAL_DESKTOP.md` for the Chrome and Windows acceptance checks. Both live gates have passed on the development machine; repeat the manual checks on any new machine or extension ID.
 
 ## TEST RESULTS
 
@@ -55,11 +55,13 @@ During testing, Chrome showed an `Extension context invalidated` error from a Fo
 
 Phase 2 implementation checks (October 11, 2026; Windows, Node.js 22.19.0): `node --test tests/browser.test.js tests/host.test.js` passed 12/12. The extension tests covered native message validation, category-only incident fields, end-of-session boundaries, host disconnect/interruption, and continued browser recording. The host test compiled the C# executable, read its length-prefixed `READY` and `FOREGROUND_CHANGED` frames, confirmed the category-only fields, and sent `STOP` for a clean exit. The generated host manifest allows this development machine's unpacked extension ID, and the current-user Chrome registry entry points to it.
 
-Phase 2 partial live report review (October 11, 2026): a locally exported 28-incident session contained Windows-host events for Word and Notepad, a Chrome PDF event for `www.w3.org`, one native-host interruption, and another Word event after the interruption. All incidents shared the session ID and were chronological; the JSON contained no full URLs or Windows file paths. It did not contain a `PDF_READER` incident, so the dedicated-reader demonstration is still pending. Repeated `WINDOW_FOCUS_LOST` events without intervening restoration exposed a duplicate-signal defect. The service worker now records focus transitions. The export also contained internal tab and window IDs; the report builder now omits them. The October 11 browser regression below verified the focus-transition and export-field fixes; the remaining desktop gate is still open.
+Phase 2 partial live report review (October 11, 2026): a locally exported 28-incident session contained Windows-host events for Word and Notepad, a Chrome PDF event for `www.w3.org`, one native-host interruption, and another Word event after the interruption. All incidents shared the session ID and were chronological; the JSON contained no full URLs or Windows file paths. It did not contain a `PDF_READER` incident. Repeated `WINDOW_FOCUS_LOST` events without intervening restoration exposed a duplicate-signal defect. The service worker now records focus transitions. The export also contained internal tab and window IDs; the report builder now omits them. The later browser and desktop regressions verified these fixes.
 
 Browser adjustment checks (October 11, 2026; Windows, Node.js 22.19.0): `node --test tests/browser.test.js tests/host.test.js` passed 13/13 after adding the normal-window option. The new check confirms a normal start keeps Chrome's window state normal while later fullscreen entry and exit still create incidents. `node --check` passed for the changed JavaScript.
 
 Browser regression and QA (October 11, 2026; Windows, unpacked Chrome extension `v0.1.2`): an earlier live export exposed missed ChatGPT and PDF events when their tabs were not active as URL updates arrived. The service worker now records URL navigations during the session even if the tab remains in the background. The follow-up `node --test tests/browser.test.js tests/host.test.js` passed 14/14, including a new background-navigation and after-End test. In a fresh session confirmed **Monitoring**, Chrome navigated to `example.com`, `chatgpt.com`, and a PDF at `www.w3.org`. The 8-event JSON export recorded exactly one `WEBPAGE_OPENED`, one `AI_SITE_OPENED`, and one `PDF_OPENED`, each with the expected hostname and before `EXAM_ENDED`. It had one Start and one End, ordered timestamps, one session ID, `CHROME` sources, null app categories, and session fields limited to `id`, `startedAt`, and `endedAt`. It contained no full URL, internal tab/window ID, PDF path, private ChatGPT path, or dummy Form answer. Focus loss/restoration followed state transitions rather than repeating consecutive loss events. The browser regression passed. A separate initial `v0.1.2` attempt did not reach **Monitoring** and was excluded from this result.
+
+Phase 2 live gate (October 11, 2026; Windows, Chrome 154.0.8037.98, unpacked extension `v0.1.2`): the popup showed **Monitoring** and **Desktop monitor: connected**. Word became the foreground process before and after a test host termination; the host process restarted automatically. A 27-event JSON export recorded two `WORD`, one `NOTEPAD`, and three `PDF_READER` foreground events. Adobe Acrobat was the installed reader; each reader event means Acrobat became active, without claiming a document was opened. The report also contained two Chrome `PDF_OPENED` events for `www.w3.org`, one `MONITORING_INTERRUPTED` event with `WINDOWS_HOST` source, and a `WEBPAGE_OPENED` event after the interruption. After End, another webpage and Word activation added no incident. The popup summary matched the 27 exported events. QA confirmed one Start and one End, ordered timestamps, one session ID, no event after End, category-only desktop incidents, hostname-only browser incidents, and no full URLs, file paths, internal tab/window IDs, or dummy Form answer. The desktop gate passed on this machine.
 
 ## LIMITATIONS
 
@@ -67,7 +69,7 @@ Opening ChatGPT does not prove its use. A foreground app event does not prove a 
 
 ## CONCLUSION
 
-The browser phase is ready for the MVP demonstration, including the verified ChatGPT and Chrome PDF labels. The Windows component is implemented, but the dedicated PDF-reader scenario and full desktop acceptance gate remain pending.
+The browser and Windows desktop phases are ready for the MVP demonstration on the development machine. The report records reviewable observations, including ChatGPT page activity and foreground app categories, without making a cheating verdict.
 
 ## APPENDICES
 
