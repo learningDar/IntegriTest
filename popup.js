@@ -8,6 +8,7 @@ const desktopDetail = document.getElementById("desktop-detail");
 const fullscreenChoice = document.getElementById("fullscreen-choice");
 const summary = document.getElementById("report-summary");
 const incidentList = document.getElementById("incidents");
+document.getElementById("build-version").textContent = `· v${chrome.runtime.getManifest().version}`;
 let currentState = null;
 
 async function request(kind, extra = {}) {
