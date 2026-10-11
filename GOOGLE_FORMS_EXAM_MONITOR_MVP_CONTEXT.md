@@ -1,12 +1,12 @@
 # Google Forms Exam Integrity Monitor — MVP Context
 
-> This is the authoritative project scope for the Monday evening, October 12, 2026 demonstration (Asia/Manila). The original proposal is preserved in Git on `main`. Finish and test each phase before starting the next.
+> This is the authoritative project scope for the Monday evening, October 12, 2026 demonstration (Asia/Manila). The original proposal is preserved in Git on `main`. Phases 1 and 2 passed on the development machine. Finish and test each remaining phase before moving to the next; do not present planned remote behavior as working.
 
 ## Purpose and success criterion
 
 Build a small examination-integrity prototype for a Google Forms respondent page. It records observable browser and Windows foreground activity as timestamped incidents for teacher review. An incident is not proof of cheating. Opening ChatGPT is observable; whether the student used it is not.
 
-The first implementation uses a Chrome Manifest V3 extension, vanilla HTML/CSS/JavaScript, `chrome.storage.local`, and a small Windows native messaging host. There is no remote backend, database, authentication, machine learning, webcam, microphone, screenshot capture, or answer collection in this deadline.
+The tested local implementation uses a Chrome Manifest V3 extension, vanilla HTML/CSS/JavaScript, `chrome.storage.local`, and a small Windows native messaging host. Phase 3 adds a teacher service and automatic incident delivery so a teacher can review sessions from another device. There is no machine learning, webcam, microphone, screenshot capture, or answer collection in this deadline.
 
 ## Required MVP demonstrations
 
@@ -27,10 +27,11 @@ Desktop events mean the application became foreground, not that a document was o
 - Monitor tab creation/activation, form visibility and focus loss/restoration, fullscreen exit/restoration, and copy/paste attempts on the form.
 - Persist session state and incidents in `chrome.storage.local` across popup closure. Deduplicate closely related browser and native events so one action gives one understandable incident where possible.
 - Record a monitoring interruption if the native host disconnects while an exam is active. Continue browser monitoring and make the missing desktop signal visible in the report.
-- Collect only category, timestamp, and needed hostname. Do not save full URLs, page titles, window titles, file paths, question text, answers, typed content, screenshots, or full browsing history.
+- Keep incident payloads to category, timestamp, and needed hostname, plus the existing event contract fields. Phase 3 may add pseudonymous participant/session IDs and authentication/connection metadata needed to deliver and review reports. Do not save full URLs, page titles, window titles, file paths, question text, answers, typed content, screenshots, or full browsing history.
 - Classify incidents for review; never auto-fail an examinee. Ended sessions must receive no further exam incidents.
+- In Phase 3, send the same minimal incident data to a teacher service automatically, show live session and connection status to the teacher, and retain local JSON export as a fallback. A missed heartbeat is a monitoring gap, not a cheating verdict.
 
-Question timing, screenshot-key detection, window-resize detection, CSV export, configurable rules, countdowns, scores, and a teacher dashboard are outside the required MVP. Add any of them only after the required browser and desktop demonstrations pass.
+Question timing, screenshot-key detection, window-resize detection, CSV export, configurable rules, countdowns, scores, and advanced analytics remain outside the required MVP. The Phase 3 teacher view is limited to participant/session status, incident timeline, and monitoring gaps. Do not add optional features before its gate passes.
 
 ## Architecture and data contract
 
@@ -39,6 +40,8 @@ Google Forms respondent page → content script ┐
 Chrome tabs/windows events → MV3 service worker ├→ chrome.storage.local → popup/timeline/JSON
 Windows foreground app → native messaging host ┘
 ```
+
+Phase 3 extends this tested local path: the extension queues session events and sends them over HTTPS to an authenticated teacher service, which stores only the minimal report data and exposes a teacher-only session list and incident timeline. Local capture and JSON export continue if the service is temporarily unreachable. The teacher view is a review interface, not a live screen feed.
 
 - `content.js`: form-specific visibility, focus, fullscreen, and copy/paste events. It sends no student answer content.
 - `background.js`: session state, browser tab/window signals, domain classification, native-host connection, deduplication, and storage.
@@ -82,12 +85,18 @@ Implement the Chrome extension, local session storage, popup, browser events, Ch
 
 Implement and register the C# native messaging host; classify Word, Notepad, and supported PDF readers; show host health and interruption. Gate: demonstrate each supported app on the demo machine, a PDF in Chrome, host disconnect, and no incidents after ending. Update README after the gate passes.
 
-### Phase 3 — final QA and presentation
+### Phase 3 — remote teacher monitoring
 
-Run the full manual scenario checklist on a prepared Google Form; fix false labels, duplicate incidents, and setup failures; capture reproducible test evidence in the README; rehearse the demonstration. Stop feature additions several hours before the Monday evening presentation.
+Add a small teacher service and teacher-only view. The teacher creates an exam code; a student pairs the extension using that code and a pseudonymous participant label. The server issues a session credential, receives start/end, incident, and heartbeat messages, deduplicates retries by incident ID, and records last contact. The extension queues unsent events locally and retries after a connection gap. The teacher view lists active, ended, and connection-unknown sessions and shows their incident timelines without full URLs, answers, document names, or automatic verdicts. Keep manual JSON export. Build and test a local teacher/student demo first, then deploy the same service to a reachable HTTPS host.
+
+Gate: first verify the full student/teacher flow on a local server in separate browser contexts. Then, from a separate device through a reachable HTTPS deployment, the teacher sees a paired student session appear without receiving a file, sees webpage/ChatGPT/Word/Notepad/PDF signals arrive, and sees a connection gap when the client stops contacting the server. Verify teacher access control, wrong/expired exam codes, duplicate/retried events, correct session boundaries, local capture while offline, recovery after reconnect, and server-side privacy fields. A local-only dashboard does not pass the remote gate. Record the actual host, setup, and results in the README only after this gate passes.
+
+### Phase 4 — final QA and presentation
+
+Run the full browser, desktop, and remote scenario checklist on a prepared Google Form; fix false labels, duplicate incidents, access failures, and setup failures; capture reproducible test evidence in the README; rehearse the student and teacher demonstration. Stop feature additions several hours before the Monday evening presentation. If the remote gate is incomplete, show the passed local MVP and identify Phase 3 as pending.
 
 ## Limitations and testing rules
 
-The extension cannot observe another browser or device. The native host sees the Windows foreground process, not what a student did inside it. A PDF in an unsupported reader, protected browser page, or `file://` location may be unclassifiable. Screenshot shortcuts are not reliable evidence and are deferred. Local storage can be cleared or altered by someone controlling the machine.
+The extension cannot observe another browser or device. The native host sees the Windows foreground process, not what a student did inside it. A PDF in an unsupported reader, protected browser page, or `file://` location may be unclassifiable. Screenshot shortcuts are not reliable evidence and are deferred. Local storage can be cleared or altered by someone controlling the machine. Remote delivery will make absent reports and connection gaps visible, but it will not prove the student kept monitoring enabled or establish identity on an unmanaged device.
 
 Test incidents against the correct session, confirm no recording before start or after end, and verify that the exported JSON matches the visible report. The testing skill owns repeatable checks; the QA skill performs the acceptance review; the documentation skill records only passed behavior and actual results. README edits remain allowed whenever useful, but passing a phase gate is the normal documentation checkpoint.
