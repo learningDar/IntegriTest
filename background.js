@@ -236,14 +236,16 @@ function disconnectNativeHost() {
   try { port.disconnect(); } catch { /* Host may already be gone. */ }
 }
 
-async function handleTab(tabId) {
+async function handleTab(tabId, navigatedUrl = null) {
   const state = await readState();
   if (!state.activeSession) return;
   let tab;
   try { tab = await chrome.tabs.get(tabId); } catch { return; }
-  if (!tab.url || tab.url === "about:blank" || tab.url === "chrome://newtab/") return;
-  if (!tab.active || (tabId === state.activeSession.formTabId && ExamRules.isSupportedFormUrl(tab.url))) return;
-  const signal = ExamRules.classifyTabUrl(tab.url);
+  const url = navigatedUrl || tab.url;
+  if (!url || url === "about:blank" || url === "chrome://newtab/") return;
+  if (!navigatedUrl && !tab.active) return;
+  if (tabId === state.activeSession.formTabId && ExamRules.isSupportedFormUrl(url)) return;
+  const signal = ExamRules.classifyTabUrl(url);
   await record(signal.type, signal.severity, signal.details, signal);
 }
 
@@ -314,8 +316,8 @@ chrome.tabs.onActivated.addListener(({ tabId }) => { handleTab(tabId).catch(cons
 chrome.tabs.onCreated.addListener(tab => {
   if (tab.active) handleTab(tab.id).catch(console.error);
 });
-chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  if (changeInfo.url && tab.active) handleTab(tabId).catch(console.error);
+chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
+  if (changeInfo.url) handleTab(tabId, changeInfo.url).catch(console.error);
 });
 chrome.tabs.onRemoved.addListener(tabId => {
   exclusive(async () => {

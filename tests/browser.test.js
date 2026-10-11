@@ -160,6 +160,33 @@ test('navigating the monitored tab away from Forms is recorded', async () => {
   assert.equal(incidents.at(-1).hostname, 'example.com');
 });
 
+test('background tab URL updates capture opened ChatGPT and PDF pages within the session', async () => {
+  const h = harness();
+  await h.send({ kind: 'START_EXAM', tabId: 1 });
+  const tab = { id: 2, windowId: 7, active: false, url: 'about:blank' };
+  h.tabs.set(2, tab);
+  tab.url = 'https://chatgpt.com/c/private?prompt=secret';
+  h.listeners.updated(2, { url: tab.url }, tab);
+  await h.flush();
+  tab.url = 'https://www.w3.org/test/dummy.pdf?token=secret';
+  h.listeners.updated(2, { url: tab.url }, tab);
+  await h.flush();
+
+  const active = (await h.send({ kind: 'GET_STATUS' })).result;
+  assert.deepEqual(active.incidents.slice(-2).map(x => [x.type, x.hostname]), [
+    ['AI_SITE_OPENED', 'chatgpt.com'], ['PDF_OPENED', 'www.w3.org']
+  ]);
+  assert.ok(!JSON.stringify(active).includes('secret'));
+  assert.ok(!JSON.stringify(active).includes('/test/'));
+
+  await h.send({ kind: 'END_EXAM' });
+  const count = (await h.send({ kind: 'GET_STATUS' })).result.incidents.length;
+  tab.url = 'https://example.org/after.pdf';
+  h.listeners.updated(2, { url: tab.url }, tab);
+  await h.flush();
+  assert.equal((await h.send({ kind: 'GET_STATUS' })).result.incidents.length, count);
+});
+
 test('service worker restart preserves the active session and JSON report', async () => {
   const first = harness();
   await first.send({ kind: 'START_EXAM', tabId: 1 });

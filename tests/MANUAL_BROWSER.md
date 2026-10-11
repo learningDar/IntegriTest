@@ -2,7 +2,7 @@
 
 Use a practice Google Form with no real student answers. Load this repository as an unpacked extension from `chrome://extensions` in Developer mode. Record the Chrome version, date, and the observed result for every item before accepting Phase 1.
 
-After each code update, click Reload on the extension card, refresh the Form, and reopen the monitor popup. Confirm the header displays the version in `manifest.json` (currently `v0.1.1`) before starting a new session. Activate each test tab by selecting it in Chrome; creating a background tab alone does not prove an opened/activated incident.
+After each code update, click Reload on the extension card, refresh the Form, and reopen the monitor popup. Confirm the header displays the version in `manifest.json` (currently `v0.1.2`) before starting a new session. Open the test sites in a tab during the active session; a new tab may remain in the background, but its URL update should be recorded. Activate the tab as a separate check for duplicates.
 
 1. Open the respondent `.../viewform` page. Leave **Start in fullscreen** checked, then start in the popup. Verify Monitoring, an `EXAM_STARTED` event, and fullscreen. Try Start again and confirm a second session is refused.
 2. Open or activate an unrelated website, then `https://chatgpt.com/`. Confirm one readable incident for each, with only hostname stored. The ChatGPT wording must say the page was opened or activated and must not claim it was used.
