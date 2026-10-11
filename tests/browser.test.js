@@ -168,6 +168,7 @@ test('service worker restart preserves the active session and JSON report', asyn
   assert.equal(state.activeSession.id, first.stored.monitorState.activeSession.id);
   const report = JSON.parse(JSON.stringify(buildReport(state)));
   assert.equal(report.incidents[0].sessionId, report.session.id);
+  assert.deepEqual(Object.keys(report.session).sort(), ['endedAt', 'id', 'startedAt']);
   assert.equal(report.incidents[0].source, 'CHROME');
   assert.equal(report.incidents[0].appCategory, null);
   assert.match(report.note, /not proof of cheating/);
@@ -202,8 +203,14 @@ test('Chrome window focus and fullscreen transitions produce review signals', as
   h.listeners.boundsChanged(h.windows.get(7));
   await h.flush();
   h.listeners.focusChanged(-1);
+  h.windows.get(7).focused = false;
+  h.listeners.focusChanged(-1);
+  await h.send({ kind: 'CONTENT_EVENT', type: 'FORM_FOCUS_LOST' }, { tab: h.tabs.get(1), url: formUrl });
   await h.flush();
+  h.windows.get(7).focused = true;
   h.listeners.focusChanged(7);
+  h.listeners.focusChanged(7);
+  await h.send({ kind: 'CONTENT_EVENT', type: 'FORM_FOCUS_RESTORED' }, { tab: h.tabs.get(1), url: formUrl });
   await h.flush();
   const incidents = (await h.send({ kind: 'GET_STATUS' })).result.incidents;
   for (const type of ['FULLSCREEN_EXITED', 'FULLSCREEN_RESTORED', 'WINDOW_FOCUS_LOST', 'WINDOW_FOCUS_RESTORED']) {

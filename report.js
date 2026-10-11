@@ -5,7 +5,11 @@
     return {
       project: 'Google Forms Exam Integrity Monitor',
       exportedAt: new Date().toISOString(),
-      session,
+      session: {
+        id: session.id,
+        startedAt: session.startedAt,
+        endedAt: session.endedAt
+      },
       incidents: state.incidents || [],
       note: 'Incidents are observations for review, not proof of cheating.'
     };

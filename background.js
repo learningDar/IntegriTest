@@ -91,6 +91,7 @@ async function startExam(tabId) {
       startedAt: new Date().toISOString(),
       endedAt: null,
       fullscreenState: null,
+      windowFocusState: "FOCUSED",
       desktopInterruptionRecorded: false
     };
     state.activeSession = session;
@@ -133,6 +134,22 @@ async function record(type, severity, details, extras) {
   return exclusive(async () => {
     const state = await readState();
     if (!addIncident(state, type, severity, details, extras)) return;
+    await writeState(state);
+  });
+}
+
+async function recordWindowFocus(focused) {
+  return exclusive(async () => {
+    const state = await readState();
+    const session = state.activeSession;
+    if (!session) return;
+    if (!session.windowFocusState) session.windowFocusState = "FOCUSED";
+    const next = focused ? "FOCUSED" : "UNFOCUSED";
+    if (session.windowFocusState === next) return;
+    session.windowFocusState = next;
+    const type = focused ? "WINDOW_FOCUS_RESTORED" : "WINDOW_FOCUS_LOST";
+    const [severity, details] = CONTENT_LABELS[type];
+    addIncident(state, type, severity, details);
     await writeState(state);
   });
 }
@@ -258,7 +275,8 @@ async function handleContent(type, sender) {
     try { windowInfo = await chrome.windows.get(sender.tab.windowId); } catch { return; }
     if (type === "FORM_FOCUS_LOST" && windowInfo.focused) return;
     if (type === "FORM_FOCUS_RESTORED" && !windowInfo.focused) return;
-    type = type === "FORM_FOCUS_LOST" ? "WINDOW_FOCUS_LOST" : "WINDOW_FOCUS_RESTORED";
+    await recordWindowFocus(type === "FORM_FOCUS_RESTORED");
+    return;
   }
   const [severity, details] = CONTENT_LABELS[type] || ["LOW", type.replaceAll("_", " ")];
   await record(type, severity, details);
@@ -306,11 +324,7 @@ chrome.windows.onFocusChanged.addListener(async windowId => {
   try {
     const state = await readState();
     if (!state.activeSession) return;
-    if (windowId === state.activeSession.windowId) {
-      await record("WINDOW_FOCUS_RESTORED", "LOW", "Examination window regained focus");
-    } else {
-      await record("WINDOW_FOCUS_LOST", "LOW", "Examination window lost focus");
-    }
+    await recordWindowFocus(windowId === state.activeSession.windowId);
   } catch (error) { console.error(error); }
 });
 chrome.windows.onBoundsChanged.addListener(windowInfo => {
