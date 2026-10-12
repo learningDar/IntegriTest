@@ -9,6 +9,10 @@ h2 { font-size: 14px; }
 .intro, .detail { color: #56657a; font-size: 12px; line-height: 1.45; }
 .intro { margin-bottom: 16px; }
 .status-panel { padding: 14px; background: white; border: 1px solid #dde4ef; border-radius: 12px; box-shadow: 0 1px 3px #1725540d; }
+.status-panel + .status-panel { margin-top: 10px; }
+.status-panel label:not(.fullscreen-option) { display: block; margin-top: 9px; color: #46546b; font-size: 12px; }
+#join-code { min-width: 0; flex: 1; height: 34px; border: 1px solid #a9b8cc; border-radius: 7px; padding: 5px 8px; font: inherit; }
+#pair-detail, #delivery-detail, #tab-warning { overflow-wrap: anywhere; }
 .status-row, .report-header, .actions { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .status-panel .detail { margin-top: 8px; }
 .fullscreen-option { display: flex; align-items: center; gap: 7px; margin-top: 12px; font-size: 12px; font-weight: 700; cursor: pointer; }

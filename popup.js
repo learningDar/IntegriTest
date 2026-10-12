@@ -8,6 +8,11 @@ const desktopDetail = document.getElementById("desktop-detail");
 const fullscreenChoice = document.getElementById("fullscreen-choice");
 const summary = document.getElementById("report-summary");
 const incidentList = document.getElementById("incidents");
+const pairButton = document.getElementById("pair-button");
+const joinCode = document.getElementById("join-code");
+const pairDetail = document.getElementById("pair-detail");
+const deliveryDetail = document.getElementById("delivery-detail");
+const tabWarning = document.getElementById("tab-warning");
 document.getElementById("build-version").textContent = `· v${chrome.runtime.getManifest().version}`;
 let currentState = null;
 
@@ -25,6 +30,20 @@ function render(state) {
   currentState = state;
   const session = state.activeSession || state.lastSession;
   const active = Boolean(state.activeSession);
+  pairButton.disabled = active;
+  joinCode.disabled = active;
+  document.getElementById("sync-button").disabled = !session?.remote;
+  if (state.pairing) {
+    pairDetail.replaceChildren();
+    const label = document.createTextNode(`Assigned Student ID: ${state.pairing.studentId} · ${state.pairing.examTitle} · `);
+    const link = document.createElement("a");
+    link.href = state.pairing.formUrl; link.target = "_blank"; link.rel = "noopener noreferrer";
+    link.textContent = "Open registered Form";
+    pairDetail.append(label, link);
+  } else pairDetail.textContent = "Local-only mode. Enter a code to send incidents to the teacher service.";
+  deliveryDetail.textContent = session?.remote
+    ? `Teacher delivery: ${session.remoteEndAck ? "complete" : session.remoteError || "pending"} · ${session.acknowledgedSequence || 0}/${state.incidents.length} events received`
+    : "";
   statusBadge.textContent = active ? "Monitoring" : "Inactive";
   statusBadge.classList.toggle("active", active);
   sessionDetail.textContent = session
@@ -83,9 +102,31 @@ function render(state) {
 }
 
 async function refresh() {
-  try { render(await request("GET_STATUS")); }
+  try { render(await request("GET_STATUS")); await checkTabs(); }
   catch (error) { message.textContent = error.message; }
 }
+
+async function checkTabs() {
+  try {
+    const tabs = await chrome.tabs.query({ currentWindow: true });
+    const extra = tabs.filter(tab => !ExamRules.isSupportedFormUrl(tab.url) &&
+      tab.url !== chrome.runtime.getURL("popup.html"));
+    tabWarning.textContent = extra.length
+      ? `Warning: ${extra.length} other tab${extra.length === 1 ? " is" : "s are"} open in this Chrome window. Close them before the exam if your professor requires it.`
+      : "No other tabs are open in this Chrome window.";
+  } catch { tabWarning.textContent = "Could not check other tabs."; }
+}
+
+pairButton.addEventListener("click", async () => {
+  message.textContent = "";
+  pairButton.disabled = true;
+  try { render(await request("PAIR_STUDENT", { code: joinCode.value })); joinCode.value = ""; }
+  catch (error) { message.textContent = error.message; await refresh(); }
+});
+document.getElementById("sync-button").addEventListener("click", async () => {
+  try { render(await request("SYNC_NOW")); }
+  catch (error) { message.textContent = error.message; }
+});
 
 startButton.addEventListener("click", async () => {
   message.textContent = "";

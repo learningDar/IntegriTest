@@ -1,6 +1,8 @@
 (() => {
   "use strict";
-  if (!/^\/forms\/d\/(?:e\/)?[^/]+\/viewform\/?$/.test(location.pathname)) return;
+  const formPage = /^\/forms\/(?:u\/\d+\/)?d\/(?:e\/)?[^/]+\/viewform\/?$/.test(location.pathname);
+  const responsePage = /^\/forms\/(?:u\/\d+\/)?d\/(?:e\/)?[^/]+\/formResponse\/?$/.test(location.pathname);
+  if (!formPage && !responsePage) return;
 
   function report(type) {
     try {
@@ -12,6 +14,21 @@
     }
   }
 
+  if (responsePage) {
+    const confirm = () => {
+      if (!document.querySelector("form") && !document.querySelector('input[type="submit"]'))
+        report("FORM_SUBMISSION_CONFIRMED");
+    };
+    if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", confirm, { once: true });
+    else confirm();
+    return;
+  }
+  document.addEventListener("submit", () => report("FORM_SUBMIT_ATTEMPT"), true);
+  document.addEventListener("click", event => {
+    const button = event.target.closest?.('[role="button"],button,input[type="submit"]');
+    if (button && /^(submit|send)$/i.test((button.getAttribute("aria-label") || button.textContent || button.value || "").trim()))
+      report("FORM_SUBMIT_ATTEMPT");
+  }, true);
   document.addEventListener("visibilitychange", () => {
     report(document.hidden ? "FORM_HIDDEN" : "FORM_VISIBLE");
   });

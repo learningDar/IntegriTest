@@ -15,7 +15,7 @@
       url &&
         url.protocol === "https:" &&
         url.hostname === "docs.google.com" &&
-        /^\/forms\/d\/(?:e\/)?[^/]+\/viewform\/?$/.test(url.pathname)
+        /^\/forms\/(?:u\/\d+\/)?d\/(?:e\/)?[^/]+\/viewform\/?$/.test(url.pathname)
     );
   }
 

@@ -3,6 +3,8 @@ importScripts("rules.js", "desktop.js");
 const STORAGE_KEY = "monitorState";
 const DEDUP_MS = 1200;
 const NATIVE_HOST = "com.learningdar.exam_monitor";
+const SERVICE_ORIGIN = "http://127.0.0.1:8787";
+const RETRY_ALARM = "exam-monitor-delivery";
 const ALLOWED_CONTENT_EVENTS = new Set([
   "FORM_HIDDEN", "FORM_VISIBLE", "FORM_FOCUS_LOST", "FORM_FOCUS_RESTORED",
   "FULLSCREEN_EXITED", "FULLSCREEN_RESTORED", "COPY_ATTEMPT", "PASTE_ATTEMPT"
@@ -22,6 +24,9 @@ const CONTENT_LABELS = {
 let operationQueue = Promise.resolve();
 let nativePort = null;
 let nativeRetryTimer = null;
+let syncTimer = null;
+let syncInFlight = null;
+let syncAgain = false;
 
 function exclusive(operation) {
   const next = operationQueue.then(operation, operation);
@@ -36,8 +41,97 @@ async function readState() {
   };
 }
 
-async function writeState(state) {
+async function writeState(state, triggerSync = true) {
   await chrome.storage.local.set({ [STORAGE_KEY]: state });
+  if (triggerSync && state.pairing && (state.activeSession?.remote || state.lastSession?.remote)) scheduleSync();
+}
+
+function scheduleSync() {
+  if (syncTimer) return;
+  syncTimer = setTimeout(() => {
+    syncTimer = null;
+    syncRemote().catch(console.error);
+  }, 100);
+}
+
+async function serviceRequest(path, credential, payload) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10000);
+  try {
+    const response = await fetch(SERVICE_ORIGIN + path, {
+      method: "POST", signal: controller.signal,
+      headers: { "content-type": "application/json", ...(credential ? { authorization: `Bearer ${credential}` } : {}) },
+      body: JSON.stringify(payload)
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || `Service returned ${response.status}.`);
+    return data;
+  } finally { clearTimeout(timeout); }
+}
+
+async function pairStudent(code) {
+  const existing = await readState();
+  if (existing.activeSession) throw new Error("End the active examination before pairing.");
+  const pairing = await serviceRequest("/api/student/pair", null, { code: String(code || "").trim().toLowerCase() });
+  await exclusive(async () => {
+    const state = await readState();
+    state.pairing = { ...pairing, used: false };
+    state.lastSession = null;
+    state.incidents = [];
+    await writeState(state);
+  });
+  return status();
+}
+
+async function markRemote(update) {
+  await exclusive(async () => {
+    const state = await readState();
+    const session = state.activeSession || state.lastSession;
+    if (!session?.remote) return;
+    Object.assign(session, update);
+    await writeState(state, false);
+  });
+}
+
+async function syncRemote() {
+  if (syncInFlight) { syncAgain = true; return syncInFlight; }
+  syncInFlight = (async () => {
+    try {
+      let state = await readState();
+      let session = state.activeSession || state.lastSession;
+      if (!session?.remote || !state.pairing || state.pairing.sessionId !== session.id) return;
+      const credential = state.pairing.credential;
+      if (!session.remoteStartAck) {
+        await serviceRequest("/api/student/start", credential, {});
+        await markRemote({ remoteStartAck: true, remoteError: null });
+      }
+      state = await readState(); session = state.activeSession || state.lastSession;
+      let acknowledged = session.acknowledgedSequence || 0;
+      while (true) {
+        const pending = state.incidents.filter(item => item.sequence > acknowledged).slice(0, 50);
+        if (!pending.length) break;
+        const result = await serviceRequest("/api/student/events", credential, { incidents: pending });
+        acknowledged = result.acknowledgedSequence;
+        await markRemote({ acknowledgedSequence: acknowledged, remoteError: null });
+        state = await readState(); session = state.activeSession || state.lastSession;
+      }
+      if (state.activeSession) {
+        await serviceRequest("/api/student/heartbeat", credential, {});
+        await markRemote({ lastDeliveryAt: new Date().toISOString(), remoteError: null });
+      } else if (!session.remoteEndAck) {
+        await serviceRequest("/api/student/end", credential, {
+          reason: session.endReason || "MANUAL", lastSequence: acknowledged
+        });
+        await markRemote({ remoteEndAck: true, lastDeliveryAt: new Date().toISOString(), remoteError: null });
+      }
+    } catch (error) {
+      await markRemote({ remoteError: error.message || "Service unavailable." });
+    }
+  })();
+  try { await syncInFlight; } finally {
+    syncInFlight = null;
+    if (syncAgain) { syncAgain = false; scheduleSync(); }
+  }
 }
 
 function makeIncident(sessionId, type, severity, details, extras = {}) {
@@ -67,6 +161,7 @@ function addIncident(state, type, severity, details, extras = {}) {
       previous.appCategory === (extras.appCategory ?? null) &&
       now - Date.parse(previous.timestamp) < DEDUP_MS) return false;
   const incident = makeIncident(session.id, type, severity, details, extras);
+  incident.sequence = state.incidents.length + 1;
   if (previous && incident.timestamp < previous.timestamp) incident.timestamp = previous.timestamp;
   state.incidents.push(incident);
   return true;
@@ -84,8 +179,14 @@ async function startExam(tabId, useFullscreen = true) {
   const result = await exclusive(async () => {
     const state = await readState();
     if (state.activeSession) throw new Error("An examination is already active.");
+    if (state.pairing?.used) throw new Error("This join code has already been used. Request a new code.");
+    if (state.pairing && new URL(tab.url).pathname.split("/").at(-2) !== state.pairing.formId)
+      throw new Error("Open the Form registered for this join code.");
     const session = {
-      id: crypto.randomUUID(),
+      id: state.pairing?.sessionId || crypto.randomUUID(),
+      remote: Boolean(state.pairing),
+      remoteStartAck: false,
+      acknowledgedSequence: 0,
       formTabId: tab.id,
       windowId: tab.windowId,
       startedAt: new Date().toISOString(),
@@ -96,6 +197,7 @@ async function startExam(tabId, useFullscreen = true) {
       desktopInterruptionRecorded: false
     };
     state.activeSession = session;
+    if (state.pairing) state.pairing.used = true;
     state.lastSession = null;
     state.incidents = [];
     state.desktopStatus = "CONNECTING";
@@ -119,12 +221,13 @@ async function startExam(tabId, useFullscreen = true) {
   return { ...(await status()), fullscreenError };
 }
 
-async function endExam() {
+async function endExam(reason = "MANUAL") {
   const ended = await exclusive(async () => {
     const state = await readState();
     if (!state.activeSession) throw new Error("No examination is active.");
     addIncident(state, "EXAM_ENDED", "LOW", "Exam session ended");
     state.activeSession.endedAt = new Date().toISOString();
+    state.activeSession.endReason = reason;
     state.lastSession = state.activeSession;
     state.activeSession = null;
     state.desktopStatus = "IDLE";
@@ -132,6 +235,7 @@ async function endExam() {
     return state;
   });
   disconnectNativeHost();
+  if (ended.lastSession.remote) await syncRemote();
   return ended;
 }
 
@@ -245,6 +349,9 @@ async function handleTab(tabId, navigatedUrl = null) {
   if (!url || url === "about:blank" || url === "chrome://newtab/") return;
   if (!navigatedUrl && !tab.active) return;
   if (tabId === state.activeSession.formTabId && ExamRules.isSupportedFormUrl(url)) return;
+  const responseMatch = new URL(url).pathname.match(/^\/forms\/(?:u\/\d+\/)?d\/(?:e\/)?([^/]+)\/formResponse\/?$/);
+  if (tabId === state.activeSession.formTabId && responseMatch &&
+      responseMatch[1] === state.pairing?.formId) return;
   const signal = ExamRules.classifyTabUrl(url);
   await record(signal.type, signal.severity, signal.details, signal);
 }
@@ -267,6 +374,26 @@ async function checkFullscreen(windowId) {
 }
 
 async function handleContent(type, sender) {
+  if (type === "FORM_SUBMIT_ATTEMPT" || type === "FORM_SUBMISSION_CONFIRMED") {
+    await exclusive(async () => {
+      const state = await readState();
+      const session = state.activeSession;
+      if (!session || sender.tab?.id !== session.formTabId || !session.remote) return;
+      const expected = state.pairing?.formId;
+      const match = new URL(sender.url).pathname.match(/^\/forms\/(?:u\/\d+\/)?d\/(?:e\/)?([^/]+)\/(viewform|formResponse)\/?$/);
+      if (!match || match[1] !== expected) return;
+      if (type === "FORM_SUBMIT_ATTEMPT" && match[2] === "viewform") {
+        session.submitAttemptAt = Date.now(); await writeState(state);
+      }
+      if (type === "FORM_SUBMISSION_CONFIRMED" && match[2] === "formResponse" &&
+          session.submitAttemptAt && Date.now() - session.submitAttemptAt < 120000) {
+        session.submissionConfirmed = true; await writeState(state);
+      }
+    });
+    if (type === "FORM_SUBMISSION_CONFIRMED" && (await readState()).activeSession?.submissionConfirmed)
+      await endExam("FORM_SUBMISSION_OBSERVED");
+    return;
+  }
   if (!ALLOWED_CONTENT_EVENTS.has(type) || !sender.tab || !ExamRules.isSupportedFormUrl(sender.url)) return;
   const state = await readState();
   if (!state.activeSession || sender.tab.id !== state.activeSession.formTabId) return;
@@ -301,6 +428,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         case "GET_STATUS": result = await status(); break;
         case "START_EXAM": result = await startExam(message.tabId, message.fullscreen !== false); break;
         case "END_EXAM": result = await endExam(); break;
+        case "PAIR_STUDENT": result = await pairStudent(message.code); break;
+        case "SYNC_NOW": await syncRemote(); result = await status(); break;
         case "CONTENT_EVENT": await handleContent(message.type, sender); result = { ok: true }; break;
         default: throw new Error("Unknown message.");
       }
@@ -337,6 +466,12 @@ chrome.windows.onFocusChanged.addListener(async windowId => {
 chrome.windows.onBoundsChanged.addListener(windowInfo => {
   checkFullscreen(windowInfo.id).catch(console.error);
 });
+if (chrome.alarms) {
+  chrome.alarms.create(RETRY_ALARM, { periodInMinutes: 0.5 });
+  chrome.alarms.onAlarm.addListener(alarm => {
+    if (alarm.name === RETRY_ALARM) syncRemote().catch(console.error);
+  });
+}
 
 readState().then(state => {
   if (state.activeSession) connectNativeHost();

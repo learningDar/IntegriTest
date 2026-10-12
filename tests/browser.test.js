@@ -8,8 +8,9 @@ const desktop = require('../desktop.js');
 const { buildReport } = require('../report.js');
 
 const formUrl = 'https://docs.google.com/forms/d/e/demo/viewform';
+const serviceUrl = process.env.SERVICE_TEST_URL;
 
-function harness(stored = {}) {
+function harness(stored = {}, fetchOverride = fetch) {
   const listeners = {};
   const nativePorts = [];
   const tabs = new Map([[1, { id: 1, windowId: 7, active: true, url: formUrl }]]);
@@ -51,6 +52,7 @@ function harness(stored = {}) {
   };
   const context = vm.createContext({
     chrome, crypto, URL, Date, Promise, Number, Set, console,
+    fetch: fetchOverride, AbortController,
     setTimeout, clearTimeout, importScripts(...files) {
       for (const file of files) {
         vm.runInContext(readFileSync(path.join(__dirname, '..', file), 'utf8'), context, { filename: file });
@@ -61,12 +63,76 @@ function harness(stored = {}) {
   async function send(message, sender = {}) {
     return new Promise(resolve => listeners.message(message, sender, resolve));
   }
-  async function flush() { await new Promise(resolve => setTimeout(resolve, 15)); }
+  async function flush(ms = 15) { await new Promise(resolve => setTimeout(resolve, ms)); }
   return { send, flush, tabs, windows, listeners, stored, nativePorts };
 }
 
+test('paired extension rejects wrong Form, retries events, and ends only after observed confirmation',
+  { skip: !serviceUrl || !process.env.SERVICE_TEST_PASSWORD }, async () => {
+    const login = await fetch(serviceUrl + '/api/teacher/login', {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({password: process.env.SERVICE_TEST_PASSWORD})
+    });
+    const cookie = login.headers.get('set-cookie').split(';')[0];
+    const teacher = async (path, value) => {
+      const result = await fetch(serviceUrl + path, { method:'POST',
+        headers:{cookie,'content-type':'application/json'},body:JSON.stringify(value) });
+      const data = await result.json();
+      assert.ok(result.ok, JSON.stringify(data));
+      return data;
+    };
+    const exam = (await teacher('/api/teacher/exams', {
+      title:'Extension flow test', formUrl
+    })).exam;
+    const code = (await teacher(`/api/teacher/exams/${exam.id}/codes`,{
+      studentIds:['DEMO'+Date.now()]
+    })).codes[0].code;
+    let offline = false;
+    const h = harness({}, (url,options) => {
+      if (offline && url.endsWith('/api/student/events')) return Promise.reject(Error('Offline test'));
+      return fetch(url,options);
+    });
+    assert.equal((await h.send({kind:'PAIR_STUDENT',code})).ok,true);
+    h.tabs.get(1).url = 'https://docs.google.com/forms/d/e/wrong/viewform';
+    assert.equal((await h.send({kind:'START_EXAM',tabId:1,fullscreen:false})).ok,false);
+    h.tabs.get(1).url = formUrl;
+    offline = true;
+    assert.equal((await h.send({kind:'START_EXAM',tabId:1,fullscreen:false})).ok,true);
+    h.tabs.set(2,{id:2,windowId:7,active:true,url:'https://chatgpt.com/c/private-prompt'});
+    h.listeners.activated({tabId:2});
+    await h.flush(250);
+    let state = (await h.send({kind:'GET_STATUS'})).result;
+    assert.ok(state.activeSession);
+    assert.equal(state.activeSession.acknowledgedSequence,0);
+    assert.equal(state.incidents.some(i=>i.type==='AI_SITE_OPENED'),true);
+    await h.send({kind:'CONTENT_EVENT',type:'FORM_SUBMIT_ATTEMPT'},
+      {tab:h.tabs.get(1),url:formUrl});
+    assert.ok((await h.send({kind:'GET_STATUS'})).result.activeSession);
+    offline = false;
+    await h.send({kind:'SYNC_NOW'});
+    await h.flush(250);
+    state = (await h.send({kind:'GET_STATUS'})).result;
+    assert.equal(state.activeSession.acknowledgedSequence,state.incidents.length);
+    await h.send({kind:'CONTENT_EVENT',type:'FORM_SUBMISSION_CONFIRMED'},
+      {tab:h.tabs.get(1),url:'https://docs.google.com/forms/u/0/d/e/demo/formResponse'});
+    await h.flush(250);
+    state = (await h.send({kind:'GET_STATUS'})).result;
+    assert.equal(state.activeSession,null);
+    assert.equal(state.lastSession.endReason,'FORM_SUBMISSION_OBSERVED');
+    assert.equal(state.lastSession.remoteEndAck,true);
+    const reportResponse = await fetch(serviceUrl+`/api/teacher/sessions/${state.lastSession.id}/report.json`,{headers:{cookie}});
+    const report = await reportResponse.json();
+    assert.equal(report.incidents.length,state.incidents.length);
+    assert.equal(report.incidents.filter(i=>i.type==='AI_SITE_OPENED').length,1);
+    assert.equal(report.session.endReason,'FORM_SUBMISSION_OBSERVED');
+    const count=state.incidents.length;
+    h.listeners.activated({tabId:2}); await h.flush();
+    assert.equal((await h.send({kind:'GET_STATUS'})).result.incidents.length,count);
+  });
+
 test('supported Form URLs and browser categories keep only hostnames', () => {
   assert.equal(rules.isSupportedFormUrl(`${formUrl}?usp=sharing`), true);
+  assert.equal(rules.isSupportedFormUrl('https://docs.google.com/forms/u/0/d/e/demo/viewform'), true);
   assert.equal(rules.isSupportedFormUrl('https://docs.google.com/forms/d/demo/edit'), false);
   assert.equal(rules.classifyTabUrl('https://chatgpt.com/c/private').type, 'AI_SITE_OPENED');
   assert.equal(rules.classifyTabUrl('https://example.org/private/path?answer=1').hostname, 'example.org');

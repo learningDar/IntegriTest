@@ -1,0 +1,13 @@
+{
+  "name": "exam-integrity-monitor",
+  "private": true,
+  "version": "0.2.0",
+  "scripts": {
+    "dev": "wrangler dev",
+    "db:local": "wrangler d1 migrations apply exam-monitor --local",
+    "test": "node --test tests/*.test.js"
+  },
+  "devDependencies": {
+    "wrangler": "4.149.0"
+  }
+}

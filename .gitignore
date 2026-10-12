@@ -1,2 +1,7 @@
 native-host/bin/
 native-host/host-manifest.json
+node_modules/
+.wrangler/
+.dev.vars
+dist/
+secrets/

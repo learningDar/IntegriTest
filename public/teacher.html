@@ -1,0 +1,12 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Professor · Exam Integrity Monitor</title><link rel="stylesheet" href="/style.css"></head><body>
+<header><a class="brand" href="/">Exam Integrity Monitor</a><a href="/">Setup guide</a></header><main>
+<section class="hero"><p class="eyebrow">Professor view</p><h1>Exam activity records</h1><p>Activity is shown for review. A join code identifies the assigned Student ID and does not verify who used the computer.</p></section>
+<p id="notice" role="status" aria-live="polite"></p>
+<section id="login-panel" class="card"><h2>Sign in</h2><form id="login-form"><label>Professor password<input id="password" type="password" autocomplete="current-password" required></label><button>Sign in</button></form></section>
+<div id="teacher-panel" hidden>
+  <button id="logout" class="secondary">Sign out</button>
+  <div class="grid"><section class="card"><h2>Create exam</h2><form id="exam-form"><label>Quiz title<input id="exam-title" maxlength="120" required></label><label>Google Forms respondent link<input id="form-url" type="url" placeholder="https://docs.google.com/forms/d/e/.../viewform" required></label><button>Create exam</button></form></section>
+  <section class="card"><h2>Exams</h2><div id="exam-list"></div></section></div>
+  <section id="exam-detail" class="card" hidden><h2 id="selected-title">Selected exam</h2><p id="selected-form"></p><form id="codes-form"><label>Student IDs, one per line<textarea id="student-ids" rows="5" placeholder="DEMO001&#10;DEMO002" required></textarea></label><button>Generate one-time codes</button></form><div id="codes-output" hidden><h3>Copy and distribute these codes now</h3><p>Codes appear once. Give each student only their own code.</p><pre id="codes-text"></pre></div><h3>Sessions</h3><button id="refresh-sessions" class="secondary">Refresh sessions</button><div id="sessions"></div></section>
+  <section id="report-panel" class="card" hidden><h2>Incident timeline</h2><p id="report-meta"></p><a id="download-report" download>Download service JSON</a><ol id="timeline"></ol></section>
+</div></main><script src="/teacher.js"></script></body></html>

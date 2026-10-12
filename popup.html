@@ -14,6 +14,16 @@
       <p class="intro">Observable activity for instructor review. Incidents are not proof of cheating.</p>
     </header>
 
+    <section class="status-panel" aria-labelledby="pair-heading">
+      <h2 id="pair-heading">Student pairing</h2>
+      <label for="join-code">One-time code from professor</label>
+      <div class="actions"><input id="join-code" type="text" maxlength="16" autocomplete="off" spellcheck="false" placeholder="16-character code"><button id="pair-button" type="button">Pair</button></div>
+      <p id="pair-detail" class="detail">Local-only mode. Enter a code to send incidents to the teacher service.</p>
+      <p id="delivery-detail" class="detail"></p>
+      <p id="tab-warning" class="detail" role="status"></p>
+      <button id="sync-button" class="secondary" type="button">Check connection / retry</button>
+    </section>
+
     <section class="status-panel" aria-labelledby="status-heading">
       <div class="status-row">
         <h2 id="status-heading">Session</h2>
