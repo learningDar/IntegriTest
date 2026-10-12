@@ -98,7 +98,7 @@ Run `npm.cmd test`. With the local Worker running, set `SERVICE_TEST_URL=http://
 | Check | Observed result |
 | --- | --- |
 | v0.1.2 Chrome and desktop gates | Passed on the development machine, including Word, Notepad, Adobe Acrobat, Chrome PDF, and host interruption |
-| Interrupted v0.2.0 local teacher session | Paired and connected; service received 46 ordered incidents including webpage, ChatGPT, Chrome PDF, and Notepad; manual End recorded. The planned after-End webpage visit was not executed. |
+| v0.2.0 local teacher session and after-End check | Paired and connected; service received 46 ordered incidents including webpage, ChatGPT, Chrome PDF, and Notepad; manual End recorded. On October 12, a later Chrome visit to `iana.org` left the ended service session at 46 incidents. |
 | v0.3.0 automated tests with local Worker | **22/22 passed** on October 12, 2026, including class reuse, one-use codes, snapshots, privacy, retry, and end boundary |
 | 30-day local retention check | A disposable old exam, code, session, and incident were removed by the scheduled handler; the earlier 46-event session remained |
 | Local contact-gap check | An aged active session showed `GAP`; a heartbeat returned it to `CONNECTED` |
@@ -107,7 +107,7 @@ Run `npm.cmd test`. With the local Worker running, set `SERVICE_TEST_URL=http://
 
 <details><summary>Earlier test history</summary>
 
-The local browser and Windows phases were demonstrated before the teacher service was added. The v0.2.0 live run established local pairing and delivery but did not complete the post-End page visit or Form submission checks. The automatic approval system reached a usage limit during that visit; it did not report an unsafe-action finding.
+The local browser and Windows phases were demonstrated before the teacher service was added. The v0.2.0 live run established local pairing and delivery, and a later post-End page visit left the service report unchanged. Form submission and the v0.3.0 guided Chrome flow remain unverified. The automatic approval system reached a usage limit during the original after-End visit; it did not report an unsafe-action finding.
 
 </details>
 
