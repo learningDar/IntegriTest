@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Exam Monitor · Setup</title>
+  <style>
+    :root{font:16px/1.6 system-ui,sans-serif;color:#17342c;background:#f3f7f4}
+    *{box-sizing:border-box}body{margin:0}main{max-width:900px;margin:auto;padding:3rem 1rem 5rem}
+    h1{font-size:clamp(2rem,5vw,3rem);line-height:1.15;margin:.3rem 0 1rem}h2{margin-top:0}
+    .eyebrow{font-size:.8rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#256950}
+    .lead{font-size:1.13rem;max-width:720px}.status{background:#fff1d8;border-left:4px solid #bb7920;padding:1rem;margin:1.8rem 0}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:1rem}
+    section.card{background:white;border:1px solid #d9e5dd;border-radius:12px;padding:1.4rem;margin:1rem 0}
+    li{margin:.65rem 0}a{color:#066747}code{background:#eaf2ec;padding:.1rem .25rem;overflow-wrap:anywhere}
+    .small{font-size:.9rem;color:#496158}footer{border-top:1px solid #d9e5dd;padding-top:1rem;margin-top:2rem;color:#496158}
+  </style>
+</head>
+<body><main>
+  <p class="eyebrow">Google Forms · exam activity report</p>
+  <h1>Set up a monitored exam</h1>
+  <p class="lead">The monitor records observable browser and supported Windows app activity for professor review. An incident is not proof of cheating.</p>
+  <p class="status"><strong>Preview package:</strong> v{{VERSION}} currently connects to a teacher service on the same computer at <code>127.0.0.1:8787</code>. Live Chrome and hosted remote checks are pending. Use this page for local setup only.</p>
+  <div class="grid">
+    <section class="card"><h2>Student</h2><ol>
+      <li>Use Windows and Chrome. <a href="exam-monitor-v{{VERSION}}.zip" download>Download the setup ZIP</a> and compare its <a href="exam-monitor-v{{VERSION}}.sha256">SHA-256 checksum</a>.</li>
+      <li>Extract it. Open <code>chrome://extensions</code>, enable Developer mode, choose <strong>Load unpacked</strong>, and select the extracted <code>extension</code> folder.</li>
+      <li>In PowerShell from the extracted folder, run <code>powershell -NoProfile -ExecutionPolicy Bypass -File native-host\install.ps1 -ExtensionId amlfomdhhaklmifkneplnngkbaabibgp</code>. Reload the extension.</li>
+      <li>Enter the one-time code from your professor in the extension popup. Open the Form link shown there, then start monitoring.</li>
+      <li>Submit the Form and check that monitoring ended. If it remains active, choose <strong>End Examination</strong>. Keep the local JSON export if delivery fails.</li>
+    </ol></section>
+    <section class="card"><h2>Professor</h2><ol>
+      <li>Create a Google Form with a required <strong>Student ID</strong> question and publish its respondent link.</li>
+      <li>Run the private local teacher service, register the Form, and assign dummy Student IDs. Give each student their one-time code.</li>
+      <li>Review assigned IDs, last contact, gaps, and incident reports in the protected teacher view. Match the Student ID with Google Forms responses separately.</li>
+    </ol><p class="small">The public remote teacher link will be added after the HTTPS deployment and separate-device check.</p></section>
+  </div>
+  <section class="card"><h2>What is recorded?</h2><p>Incident categories, timestamps, supported app categories, and needed website hostnames. The monitor does not collect answers, document contents, full browsing URLs, window titles, or file paths. A gap shows missed contact, not what happened during it.</p></section>
+  <footer>Read the <a href="README.md">project README</a> for scope, test status, and limitations.</footer>
+</main></body></html>
