@@ -28,7 +28,9 @@ $instructions = @"
 Exam Integrity Monitor v$version
 
 1. Extract this folder. In Chrome, open chrome://extensions, enable Developer mode,
-   click Load unpacked, and choose the extension folder.
+   click Load unpacked, and choose the extension folder INSIDE exam-monitor-v$version.
+   That extension folder must contain manifest.json. If Chrome says the manifest
+   is missing, you selected the outer exam-monitor-v$version folder.
 2. Verify the extension ID is amlfomdhhaklmifkneplnngkbaabibgp.
 3. In PowerShell run:
    powershell -NoProfile -ExecutionPolicy Bypass -File native-host\install.ps1 -ExtensionId amlfomdhhaklmifkneplnngkbaabibgp
@@ -49,7 +51,7 @@ $checksumPath = Join-Path $downloadDir "exam-monitor-v$version.sha256"
 [System.IO.File]::WriteAllText($checksumPath,"$hash  exam-monitor-v$version.zip`n",(New-Object System.Text.UTF8Encoding($false)))
 $indexPath = Join-Path $root 'public\index.html'
 $html = [System.IO.File]::ReadAllText($indexPath)
-$html = [regex]::Replace($html,'<p id="checksum" class="small">.*?</p>',"<p id=`"checksum`" class=`"small`">SHA-256: <code>$hash</code> | <a href=`"/downloads/exam-monitor-v$version.sha256`">checksum file</a></p>")
+$html = [regex]::Replace($html,'<p id="checksum"[^>]*>.*?</p>',"<p id=`"checksum`" class=`"checksum`">SHA-256 <code>$hash</code> <a href=`"/downloads/exam-monitor-v$version.sha256`">Checksum file</a></p>")
 [System.IO.File]::WriteAllText($indexPath,$html,(New-Object System.Text.UTF8Encoding($false)))
 Write-Output "Package: $zip"
 Write-Output "SHA-256: $hash"

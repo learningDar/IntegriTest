@@ -2,6 +2,14 @@
 
 > **Preview status:** The local browser and Windows monitoring build has passed live checks. The v{{VERSION}} teacher-service package has passed automated and local API checks, but its live Chrome and hosted remote checks remain pending. This public export is prepared for later release; it is not yet a verified remote-monitoring deployment.
 
+| Area | Status |
+| --- | --- |
+| Chrome and Windows local monitor | **Verified on the development machine** |
+| Teacher service and setup pages | **Local checks passed** |
+| Packaged Chrome and HTTPS remote flow | **Acceptance pending** |
+
+**Start here:** [Setup page](index.html) · [Installation](#installation--setup) · [User guide](#user-guide) · [Limitations](#limitations)
+
 ## PROJECT OVERVIEW
 
 This project records observable activity during a Google Forms examination so an instructor can review a timestamped incident report. It does not decide whether a student cheated.
@@ -26,7 +34,7 @@ A Chrome extension records browser events and stores incidents locally. A small 
 
 ## SYSTEM WORKFLOW
 
-The professor registers an existing Google Form with a required **Student ID** question and assigns a one-time code to each dummy student ID. The student pairs the extension, opens the registered Form, starts monitoring, and submits. The extension keeps a local report and attempts to deliver events to the teacher service. The professor compares the assigned ID with the separate Google Forms response. A join code does not verify a person's identity.
+The professor registers an existing Google Form with a required **Student ID** question and assigns labels such as `Student 1` and `Student 2`. Each label gets a one-time code. The student pairs the extension, opens the registered Form, starts monitoring, and submits. The extension keeps a local report and attempts to deliver events to the teacher service. The professor compares the assigned ID with the separate Google Forms response. A join code does not verify a person's identity.
 
 ## TOOLS & TECHNOLOGIES
 
@@ -35,7 +43,7 @@ Google Chrome Manifest V3, JavaScript, Windows PowerShell, a C# native messaging
 ## INSTALLATION / SETUP
 
 1. Download [exam-monitor-v{{VERSION}}.zip](exam-monitor-v{{VERSION}}.zip) and compare its SHA-256 with [exam-monitor-v{{VERSION}}.sha256](exam-monitor-v{{VERSION}}.sha256).
-2. Extract the ZIP. In Chrome, open `chrome://extensions`, enable **Developer mode**, choose **Load unpacked**, and select the extracted `extension` folder. Check that Chrome shows extension ID `amlfomdhhaklmifkneplnngkbaabibgp`.
+2. Extract the ZIP. In Chrome, open `chrome://extensions`, enable **Developer mode**, choose **Load unpacked**, and select the `extension` folder inside `exam-monitor-v0.2.0`. This folder contains `manifest.json`; selecting the outer folder causes a missing-manifest error. Check that Chrome shows extension ID `amlfomdhhaklmifkneplnngkbaabibgp`.
 3. In PowerShell from the extracted folder, run `powershell -NoProfile -ExecutionPolicy Bypass -File native-host\install.ps1 -ExtensionId amlfomdhhaklmifkneplnngkbaabibgp`. Reload the extension afterward.
 4. Open the extension popup and pair with the one-time code from the professor. Open the Form link displayed by the popup.
 

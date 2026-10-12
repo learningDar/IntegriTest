@@ -1,5 +1,16 @@
 # Google Forms Exam Integrity Monitor
 
+> **Project status · October 12, 2026:** The local Chrome and Windows monitor is verified. The Phase 3 teacher service passes local automated/API checks, and its refreshed setup and professor pages have been reviewed in Chrome. A packaged v0.2.0 Chrome session and a deployed HTTPS session still need live acceptance. The report records observations for review; it does not decide whether a student cheated.
+
+| Phase | Status | Evidence |
+| --- | --- | --- |
+| Browser monitoring | **Passed** | Chrome session and JSON export |
+| Windows foreground monitoring | **Passed** | Word, Notepad, Adobe Acrobat, and host interruption checks |
+| Teacher monitoring | **In progress** | Local Worker, D1, API, setup page, and professor view checks |
+| Combined QA | **Pending** | Begins after the remote gate |
+
+**Start here:** [Local setup](#installation--setup) · [Student and professor guide](#user-guide) · [Latest test results](#test-results) · [Known limits](#limitations)
+
 ## PROJECT OVERVIEW
 
 The Chrome extension records observable activity during a Google Forms session and produces a timestamped incident report for teacher review. The browser and Windows companion gates passed on October 11, 2026, with Adobe Acrobat as the verified PDF reader. Phase 3 development is on `feat/phase3-teacher-monitoring`: a local teacher service, view, setup page, and extension delivery path are implemented and have passed automated/local API checks. The packaged extension and a separate-device HTTPS flow have not passed their live gates, so remote monitoring is not yet verified.
@@ -18,11 +29,29 @@ A Google Forms exam alone provides limited visibility into tab changes, other we
 
 ## SYSTEM FEATURES
 
-**Browser phase, verified in Chrome:** start/end session, tab and webpage events, ChatGPT hostname classification, Chrome PDF URL classification, form focus and fullscreen events, copy/paste attempts, a local incident timeline, and JSON export. **Start in fullscreen** is checked by default; unchecking it starts a normal Chrome window. **Windows phase, verified on this machine:** foreground categories for Microsoft Word, Windows Notepad, and Adobe Acrobat; native-host connection, interruption, and recovery. **Phase 3, implemented and under test:** professor exam records with registered Form links and assigned Student IDs, one-time codes, extension pairing, same-window tab warning, queued incident delivery, heartbeats, connection-gap display, observed-submission/manual endings, service JSON export, 30-day cleanup, and a public setup page. Foxit and SumatraPDF mappings exist in code but have not been demonstrated on this machine. Question timing, screenshot-key detection, resize events, and CSV export are deferred.
+| Area | Behavior | Current evidence |
+| --- | --- | --- |
+| Chrome extension | Start/end, tab and webpage signals, ChatGPT and Chrome PDF classification, focus/fullscreen, copy/paste, local timeline, JSON export | Live Chrome gate passed on v0.1.2 |
+| Windows companion | Foreground categories for Word, Notepad, and Adobe Acrobat; connection and interruption signals | Live Windows gate passed on this machine |
+| Teacher service | Form records, assigned Student IDs, one-time codes, queued delivery, heartbeat/gap status, report JSON, and 30-day cleanup | Local API and page checks passed; live packaged-extension and HTTPS gates pending |
+
+The popup's **Start in fullscreen** option is checked by default; uncheck it to keep Chrome window controls visible. The professor workspace and setup guide use a cybersecurity-inspired navy/teal palette with a saved light/dark choice. Student ID examples now use `Student 1` and `Student 2`; the teacher API accepts those labels. Foxit and SumatraPDF mappings exist but have not been demonstrated on this machine. Question timing, screenshot-key detection, resize events, and CSV export remain deferred.
 
 ## SYSTEM ARCHITECTURE / COMPONENTS
 
 The tested Manifest V3 extension has a Google Forms content script, a service worker for session and browser events, and a popup for control and reporting. `chrome.storage.local` holds local sessions and incidents. A C# native messaging host polls the Windows foreground process and sends only an app category and timestamp to the service worker. The host has no independent report storage. The Phase 3 branch adds a Cloudflare Worker with D1, static setup and teacher pages, a password-protected teacher API, and student pairing/event APIs. The Worker is running locally; no hosted service is verified yet.
+
+```mermaid
+flowchart LR
+    F[Google Form] --> E[Chrome extension]
+    H[Windows companion] -->|App category + time| E
+    E -->|Local incidents| L[Chrome storage + JSON fallback]
+    E -->|Queued events + heartbeat| W[Teacher Worker]
+    W --> D[(D1 records)]
+    D --> V[Protected professor view]
+```
+
+The remote path above describes the implemented Phase 3 design. Its local API path has been checked; the deployed path has not passed acceptance.
 
 ## SYSTEM WORKFLOW
 
@@ -34,17 +63,34 @@ Google Chrome, Chrome Extension Manifest V3, vanilla JavaScript/HTML/CSS, Chrome
 
 ## INSTALLATION / SETUP
 
-Open `chrome://extensions` in Chrome, enable Developer mode, choose **Load unpacked**, and select this repository folder. Copy the unpacked extension ID. From PowerShell in the repository root, run `powershell -NoProfile -ExecutionPolicy Bypass -File native-host\install.ps1 -ExtensionId YOUR_EXTENSION_ID`, replacing `YOUR_EXTENSION_ID` with that ID. The script compiles the host with `C:\Windows\Microsoft.NET\Framework\v4.0.30319\csc.exe`, writes an ignored native host manifest, and registers it under the current user's Chrome native messaging registry key. Reload the extension and refresh the Form after a code or permission change; confirm the popup header shows the version in `manifest.json`. Open a Google Forms respondent URL ending in `/viewform`, then use the pinned popup. The control page can also be opened at `chrome-extension://YOUR_EXTENSION_ID/popup.html` in another tab while exactly one supported Form is open. The development machine's extension ID is `ohhphckdheaeodppedfkbnljdfdoechd`; its host registration and live connection were verified on October 11.
+**Verified local monitor on `main`**
 
-For the Phase 3 localhost service, run `npm.cmd install`, then `npm.cmd run db:local`. Create an ignored `.dev.vars` containing `TEACHER_PASSWORD`, a random `SESSION_SECRET`, and `ALLOWED_EXTENSION_IDS=amlfomdhhaklmifkneplnngkbaabibgp`. Run `npm.cmd run dev -- --ip 127.0.0.1 --port 8787`, then open `http://127.0.0.1:8787/` for the public setup page and `/teacher.html` for the professor view. Run `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/package-demo.ps1` to build the versioned ZIP and checksum shown on the setup page. The extension package uses the stable ID above; its native-host installer must be run with that ID. This package targets localhost only. The development password is held in the ignored local secrets file; it is not a production credential. Cloudflare authentication, D1 creation, secret configuration, HTTPS packaging, and a separate-device check are pending.
+1. Open `chrome://extensions` in Chrome, enable Developer mode, choose **Load unpacked**, and select the repository folder. Copy the extension ID.
+2. In PowerShell at the repository root, run `powershell -NoProfile -ExecutionPolicy Bypass -File native-host\install.ps1 -ExtensionId YOUR_EXTENSION_ID`.
+3. Reload the extension, refresh the Google Form respondent page, and open the pinned popup. Its header should show the version from `manifest.json`.
+
+The installer compiles the C# host using the .NET Framework compiler and registers Chrome native messaging for the current Windows user. The development machine's v0.1.2 ID, `ohhphckdheaeodppedfkbnljdfdoechd`, had a verified host connection on October 11. The standalone popup page can be opened at `chrome-extension://YOUR_EXTENSION_ID/popup.html` while one supported Form is open.
+
+**Phase 3 local teacher preview on `feat/phase3-teacher-monitoring`**
+
+1. Run `npm.cmd install`, then `npm.cmd run db:local`.
+2. Create an ignored `.dev.vars` with `TEACHER_PASSWORD`, a random `SESSION_SECRET`, and `ALLOWED_EXTENSION_IDS=amlfomdhhaklmifkneplnngkbaabibgp`.
+3. Run `npm.cmd run dev -- --ip 127.0.0.1 --port 8787`. Open [the local setup guide](http://127.0.0.1:8787/) and [professor workspace](http://127.0.0.1:8787/teacher.html).
+4. Run `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/package-demo.ps1` to refresh the ZIP and checksum. In Chrome's **Load unpacked** picker, select `dist/exam-monitor-v0.2.0/extension` (the inner folder containing `manifest.json`). Selecting `dist/exam-monitor-v0.2.0` causes a missing-manifest error. The expected ID is `amlfomdhhaklmifkneplnngkbaabibgp`. Install the bundled native host with that ID.
+
+The v0.2.0 package targets localhost. The local password stays in `.dev.vars`, outside Git; it is not a production credential. Cloudflare authentication, D1 creation, HTTPS packaging, and separate-device verification are pending.
 
 ## USER GUIDE
 
-On a supported Google Form respondent page, open the popup. **Start in fullscreen** is checked by default; uncheck it before **Start Examination** to keep Chrome tabs and window controls visible. In fullscreen, Ctrl+Tab changes Chrome tabs and F11 exits fullscreen; changes are recorded. The popup shows session and desktop connection status plus the incident timeline. Bring another webpage, ChatGPT, Word, Notepad, or a supported PDF reader to the foreground to produce observable signals. **End Examination** closes recording, and **Export JSON** downloads the local report. Desktop app signals mean an app became active, not that a document was read. An incident is an observation for review, not a cheating verdict.
+**Student · verified local monitor:** Open a supported Form, choose whether to start in fullscreen, then select **Start Examination**. The popup shows session state, Windows companion state, and the incident timeline. Select **End Examination** and **Export JSON** to save the report. The `main` build requires the student to send that file to the professor.
 
-On `main`, the student must send exported JSON to the teacher. For the Phase 3 localhost demo, the professor signs in, registers a Form with a required Student ID question, enters dummy IDs, and distributes one-time codes. The student pairs in the popup, opens the Form link shown there, and starts. The popup warns about other tabs in the same window and shows teacher-delivery status. The teacher view lists assigned IDs, contact status, and server reports; refresh to see new incidents. If a valid Form submission is observed, the extension should end automatically. If it does not, use End Examination. The student can still export local JSON if delivery failed. Do not treat a code as identity verification.
+**Student · Phase 3 preview:** Enter the one-time code, open the Form link shown by the popup, and start. The popup warns about other tabs in the same Chrome window and shows delivery status. A confirmed submission should end the session; **End Examination** remains the fallback. Local JSON export remains available if delivery fails.
 
-For a short demonstration, use a practice Form with dummy content, confirm popup version `v0.1.2` and **Desktop monitor: connected**, and start with fullscreen unchecked. Open an unrelated webpage, `chatgpt.com`, and a Chrome PDF; then bring Word, Notepad, and Adobe Acrobat to the foreground one at a time. Return to the Form, review the timeline, end the exam, and export JSON. Show that the report contains hostnames and app categories rather than page paths, document names, or answers. Keep the host-disconnect test in `tests/MANUAL_DESKTOP.md` for QA rather than the short classroom demonstration.
+**Professor · Phase 3 preview:** Sign in, register a published Form with a required Student ID question, and assign labels such as `Student 1` and `Student 2`. Give each student their own code. In the professor workspace, select the exam, refresh activity, review contact and incident records, and download the service JSON. Match the assigned ID with the separate Google Forms answer; a code does not verify physical identity.
+
+The setup guide and professor workspace offer saved light/dark modes. In fullscreen, Ctrl+Tab changes Chrome tabs and F11 exits fullscreen; those changes can be recorded. A desktop app signal means the app became active, not that a document was read.
+
+For a short local presentation, use a practice Form, confirm v0.1.2 and **Desktop monitor: connected**, and start with fullscreen unchecked. Visit another webpage, `chatgpt.com`, and a Chrome PDF; then bring Word, Notepad, and Adobe Acrobat forward one at a time. Return to the Form, review the timeline, end, and export JSON. The report should show hostnames and app categories without page paths, document names, or answers.
 
 Use the published [Systems Integration and Architecture Fundamentals practice quiz](https://docs.google.com/forms/d/e/1FAIpQLSdOyiXOUU2YWqp2RFh6SR_-dPf8ZmixAjrT7bZ4EE0TnS7oVQ/viewform) for browser demonstrations. It has 10 required multiple-choice questions, four choices each, one point each, and a verified answer key. It collects no email addresses and asks for no personal information. The owner can edit it in [Google Forms](https://docs.google.com/forms/d/1AflTsgzB8kgf_uiEODvX0KPT8boAp5xWdPVcTl9yW-M/edit). Use dummy answers; the extension does not record them. **This practice quiz lacks the Phase 3 required Student ID question.** Add that question to a dedicated Phase 3 test Form before validating professor matching.
 
@@ -53,6 +99,17 @@ Use the published [Systems Integration and Architecture Fundamentals practice qu
 Phase gates and required demonstrations are defined in `GOOGLE_FORMS_EXAM_MONITOR_MVP_CONTEXT.md`. Run `npm.cmd test` for the extension, host, and service checks. With the local Worker running, set `SERVICE_TEST_URL=http://127.0.0.1:8787` and `SERVICE_TEST_PASSWORD` to the local teacher password before `npm.cmd test` to include the live API and simulated extension delivery tests. Use `tests/MANUAL_BROWSER.md`, `tests/MANUAL_DESKTOP.md`, and `tests/MANUAL_REMOTE.md` for Chrome, Windows, and Phase 3 checks. The earlier browser and desktop live gates passed on the development machine. The Phase 3 Chrome package and deployed HTTPS gates are still pending; final combined QA is Phase 4.
 
 ## TEST RESULTS
+
+| Checkpoint | Result | What was verified |
+| --- | --- | --- |
+| Phase 1 browser | **Passed** · October 10–11 | Form session, webpage/ChatGPT/PDF signals, focus/fullscreen, persistence, JSON privacy, after-End boundary |
+| Phase 2 Windows | **Passed** · October 11 | Word, Notepad, Acrobat, host interruption/recovery, no incident after End |
+| Phase 3 local checks | **19/19 passed** · October 12 | Teacher API, one-time codes, retry, privacy, local UI, setup connection, and retention |
+| Phase 3 Chrome + HTTPS | **Pending** | Fresh-profile packaged extension and separate-device remote path |
+
+<details>
+<summary>Earlier browser and Windows test notes</summary>
+
 
 Phase 0 local checks (October 10, 2026): all five project skills passed `quick_validate.py` with UTF-8 enabled; a content check confirmed all 14 requested README headings and the six priority monitoring areas in the MVP context.
 
@@ -74,7 +131,11 @@ Phase 2 live gate (October 11, 2026; Windows, Chrome 154.0.8037.98, unpacked ext
 
 Pre-remote baseline QA review (October 11, 2026; recorded before the phase change): the browser and desktop live reports together cover all six original demonstrations and the existing local MVP controls. The 8-event browser report contains the webpage, ChatGPT, and Chrome PDF labels; the 27-event desktop report contains Word, Notepad, Acrobat, host interruption/recovery, browser continuation, and the post-End boundary. Both reports use observation wording and pass the privacy-field checks above. `node --test tests/browser.test.js tests/host.test.js` passed 14/14 after the final local code change. A fresh practice Form should be used for presentation so no real application answers are visible. Phase 3 remote results and Phase 4 combined QA results are pending.
 
+</details>
+
 Phase 3 local implementation checks (October 12, 2026; Windows, Node.js 22.19.0, Wrangler 4.149.0, local D1): the verified `v0.1.2-local` baseline was promoted to `main` and tagged; `feat/phase3-teacher-monitoring` was created from it. `npm.cmd run db:local` applied the D1 schema. With the local Worker running, `npm.cmd test` passed 19/19: the original 14 browser/host checks plus paired extension simulation, teacher API flow, CORS access, public health check, and signed-in Form URL canonicalization. The API checks covered wrong and reused codes, unauthorized teacher access, atomic code generation, event retry deduplication, manual and observed-submission endings, no post-End event, service report privacy, and wrong-Form refusal. In the local teacher page, sign-in, exam creation, one-time code generation, assigned IDs, session grouping, timeline, and a simulated connection gap were visible. The public page's **Check connection** button reported service version `0.2.0`. The setup ZIP returned HTTP 200 and its file hash matched the published SHA-256. Invoking the local scheduled handler after aging a test session removed its incident and session rows; aging a test exam and code removed both rows. A live practice Form stayed on `/viewform` after failed required-question validation and used `/forms/u/0/d/e/.../formResponse` after a dummy successful submission; the extension route matcher was updated for that path. The new `v0.2.0` unpacked extension has not yet completed a live Chrome session, and no HTTPS/separate-device check has passed. Phase 3 remains open.
+
+Phase 3 interface check (October 12, 2026; local Chrome and Worker): the updated professor workspace displayed exam records, assigned/active/gap/ended counts, student status cards, and a four-event timeline from an existing local record. The setup guide's connection check reported `v0.2.0`. Light and dark toggles rendered on both pages, and the choice persisted when navigating between them. After the API accepted `Student 1` and `Student 2` labels, the full local suite passed 19/19 again. The Phase 3 live extension and remote gates remain open.
 
 ## LIMITATIONS
 

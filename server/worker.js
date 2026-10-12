@@ -176,7 +176,7 @@ async function teacherApi(request, env, path) {
     const input = await body(request);
     const ids = input.studentIds;
     if (!Array.isArray(ids) || !ids.length || ids.length > 100 ||
-        ids.some(id => typeof id !== "string" || !/^[A-Za-z0-9_-]{2,40}$/.test(id)) ||
+        ids.some(id => typeof id !== "string" || !/^[A-Za-z0-9][A-Za-z0-9 _-]{0,38}[A-Za-z0-9]$/.test(id)) ||
         new Set(ids).size !== ids.length) return error(400, "Enter up to 100 unique student IDs.");
     const now = new Date().toISOString();
     const codes = [];

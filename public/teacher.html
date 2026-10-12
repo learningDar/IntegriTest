@@ -1,12 +1,34 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Professor · Exam Integrity Monitor</title><link rel="stylesheet" href="/style.css"></head><body>
-<header><a class="brand" href="/">Exam Integrity Monitor</a><a href="/">Setup guide</a></header><main>
-<section class="hero"><p class="eyebrow">Professor view</p><h1>Exam activity records</h1><p>Activity is shown for review. A join code identifies the assigned Student ID and does not verify who used the computer.</p></section>
-<p id="notice" role="status" aria-live="polite"></p>
-<section id="login-panel" class="card"><h2>Sign in</h2><form id="login-form"><label>Professor password<input id="password" type="password" autocomplete="current-password" required></label><button>Sign in</button></form></section>
-<div id="teacher-panel" hidden>
-  <button id="logout" class="secondary">Sign out</button>
-  <div class="grid"><section class="card"><h2>Create exam</h2><form id="exam-form"><label>Quiz title<input id="exam-title" maxlength="120" required></label><label>Google Forms respondent link<input id="form-url" type="url" placeholder="https://docs.google.com/forms/d/e/.../viewform" required></label><button>Create exam</button></form></section>
-  <section class="card"><h2>Exams</h2><div id="exam-list"></div></section></div>
-  <section id="exam-detail" class="card" hidden><h2 id="selected-title">Selected exam</h2><p id="selected-form"></p><form id="codes-form"><label>Student IDs, one per line<textarea id="student-ids" rows="5" placeholder="DEMO001&#10;DEMO002" required></textarea></label><button>Generate one-time codes</button></form><div id="codes-output" hidden><h3>Copy and distribute these codes now</h3><p>Codes appear once. Give each student only their own code.</p><pre id="codes-text"></pre></div><h3>Sessions</h3><button id="refresh-sessions" class="secondary">Refresh sessions</button><div id="sessions"></div></section>
-  <section id="report-panel" class="card" hidden><h2>Incident timeline</h2><p id="report-meta"></p><a id="download-report" download>Download service JSON</a><ol id="timeline"></ol></section>
-</div></main><script src="/teacher.js"></script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b1b2b">
+  <title>Professor workspace · Exam Integrity Monitor</title>
+  <script src="/theme.js"></script>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header class="site-header"><div class="header-inner"><a class="brand" href="/"><span class="brand-mark" aria-hidden="true">◆</span><span>Exam Integrity<span class="brand-light"> Monitor</span></span></a><nav class="header-actions" aria-label="Main navigation"><a href="/">Setup guide</a><button id="theme-toggle" class="theme-toggle" type="button" aria-label="Switch color theme">Theme</button></nav></div></header>
+  <main class="site-shell">
+    <section class="hero hero-compact"><div><p class="eyebrow">Professor workspace</p><h1>Exam activity, in context.</h1><p class="lead">Register a Google Form, assign a code to each student, and review the observations received for that exam.</p></div><div class="status-note"><span class="status-dot" aria-hidden="true"></span><div><strong>Local preview</strong><span>Hosted remote monitoring is still being verified.</span></div></div></section>
+    <p id="notice" class="notice" role="status" aria-live="polite"></p>
+    <section id="login-panel" class="card auth-card"><div class="section-heading"><span class="step-number">ACCESS</span><div><h2>Professor sign in</h2><p>Reports and student codes are available only in this protected view.</p></div></div><form id="login-form" class="form-stack"><label for="password">Professor password</label><input id="password" type="password" autocomplete="current-password" required><button type="submit">Sign in to workspace</button></form></section>
+    <div id="teacher-panel" hidden>
+      <div class="workspace-heading"><div><p class="eyebrow">Workspace</p><h2>Forms and student activity</h2><p>Follow the steps from left to right. A record is linked to an assigned ID, not a verified identity.</p></div><button id="logout" class="button-secondary" type="button">Sign out</button></div>
+      <div class="workspace-grid">
+        <div class="stack">
+          <section class="card"><div class="section-heading"><span class="step-number">01</span><div><h2>Register a Form</h2><p>Use the published respondent link ending in <code>viewform</code>.</p></div></div><form id="exam-form" class="form-stack"><label for="exam-title">Exam title</label><input id="exam-title" maxlength="120" placeholder="Systems Integration Quiz" required><label for="form-url">Google Forms respondent link</label><input id="form-url" type="url" placeholder="https://docs.google.com/forms/d/e/.../viewform" required><button type="submit">Create exam record</button></form></section>
+          <section class="card"><div class="section-heading"><span class="step-number">02</span><div><h2>Choose an exam</h2><p>Each record keeps its own students and activity.</p></div></div><div id="exam-list" class="exam-list"></div></section>
+        </div>
+        <div class="stack">
+          <section id="empty-selection" class="card empty-state"><span class="empty-icon" aria-hidden="true">⌁</span><h2>Ready when you are</h2><p>Create an exam record or select one from the list to assign students and review activity.</p></section>
+          <section id="exam-detail" class="card" hidden><div class="section-heading detail-heading"><span class="step-number">03</span><div><p class="overline">Selected exam</p><h2 id="selected-title">Exam</h2><p id="selected-form"></p></div></div><div class="divider"></div><div class="section-heading"><span class="step-number">04</span><div><h3>Assign student IDs</h3><p>Use labels that match the required Student ID question in the Form.</p></div></div><form id="codes-form" class="form-stack"><label for="student-ids">Student IDs · one per line</label><textarea id="student-ids" rows="4" placeholder="Student 1&#10;Student 2" required></textarea><button type="submit">Generate one-time codes</button></form><div id="codes-output" class="code-output" hidden><h3>Share each code privately</h3><p>Codes appear here once. Copy them now and give each student only their own code.</p><pre id="codes-text"></pre></div><div class="divider"></div><div class="roster-heading"><div><p class="overline">Activity record</p><h3>Student sessions</h3><p>Refresh to check the latest contact and activity. A connection gap means contact was missed.</p></div><button id="refresh-sessions" class="button-secondary" type="button">Refresh activity</button></div><div id="session-summary" class="metric-grid" aria-label="Selected exam summary"><div class="metric"><strong id="metric-assigned">0</strong><span>Assigned</span></div><div class="metric"><strong id="metric-active">0</strong><span>Active</span></div><div class="metric"><strong id="metric-gap">0</strong><span>Gaps</span></div><div class="metric"><strong id="metric-ended">0</strong><span>Ended</span></div></div><div id="sessions" class="session-list"></div></section>
+          <section id="report-panel" class="card" hidden><div class="roster-heading"><div><p class="overline">Review record</p><h2>Incident timeline</h2><p id="report-meta"></p></div><a id="download-report" class="button-link" download>Download service JSON</a></div><p class="review-note">These are observed signals for teacher review, not a finding of cheating.</p><ol id="timeline" class="timeline"></ol></section>
+        </div>
+      </div>
+    </div>
+  </main>
+  <script src="/teacher.js"></script>
+</body>
+</html>

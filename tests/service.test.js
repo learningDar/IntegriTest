@@ -32,18 +32,18 @@ test('teacher access, one-use codes, delivery retries, ending, and private servi
     assert.ok(!JSON.stringify(created.data).includes(privatePath));
     const exam = created.data.exam;
     const codeResponse = await call(`/api/teacher/exams/${exam.id}/codes`, {
-      method:'POST',cookie,value:{studentIds:['DEMO001']}
+      method:'POST',cookie,value:{studentIds:['Student 1']}
     });
     assert.equal(codeResponse.status, 201);
     const code = codeResponse.data.codes[0].code;
     assert.equal((await call(`/api/teacher/exams/${exam.id}/codes`,{
-      method:'POST',cookie,value:{studentIds:['DEMO002','DEMO001']}
+      method:'POST',cookie,value:{studentIds:['Student 2','Student 1']}
     })).status,409);
     assert.equal((await call(`/api/teacher/exams/${exam.id}/codes`,{
-      method:'POST',cookie,value:{studentIds:['DEMO002']}
+      method:'POST',cookie,value:{studentIds:['Student 2']}
     })).status,201);
     const beforePair = await call(`/api/teacher/exams/${exam.id}/sessions`,{cookie});
-    const assigned = beforePair.data.sessions.find(s => s.student_id === 'DEMO001');
+    const assigned = beforePair.data.sessions.find(s => s.student_id === 'Student 1');
     assert.equal(assigned.status,'NOT_PAIRED');
     assert.equal(assigned.id,null);
     assert.equal((await call('/api/student/pair',{method:'POST',value:{code:'0000000000000000'}})).status,403);
@@ -74,13 +74,13 @@ test('teacher access, one-use codes, delivery retries, ending, and private servi
     assert.equal((await call('/api/student/end',{method:'POST',credential,value:{reason:'MANUAL',lastSequence:4}})).status,200);
     assert.equal((await call('/api/student/events',{method:'POST',credential,value:{incidents:[incident(5,'WEBPAGE_OPENED')]}})).status,409);
     const sessions = await call(`/api/teacher/exams/${exam.id}/sessions`,{cookie});
-    const ended = sessions.data.sessions.find(s => s.student_id === 'DEMO001');
+    const ended = sessions.data.sessions.find(s => s.student_id === 'Student 1');
     assert.equal(ended.event_count,4);
     assert.equal(ended.end_reason,'MANUAL');
     const report = await call(`/api/teacher/sessions/${pair.data.sessionId}/report.json`,{cookie});
     assert.equal(report.status,200);
     assert.equal(report.data.incidents.length,4);
-    assert.equal(report.data.studentId,'DEMO001');
+    assert.equal(report.data.studentId,'Student 1');
     assert.equal(report.data.incidents[1].hostname,'chatgpt.com');
     assert.equal(report.data.incidents[2].appCategory,'WORD');
     assert.equal(report.data.incidents[2].source,'WINDOWS_HOST');
