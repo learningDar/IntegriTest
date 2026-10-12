@@ -6,7 +6,7 @@ Use dummy Student IDs and an editable practice Form with a required **Student ID
 
 1. On `feat/phase3-teacher-monitoring`, run `npm.cmd install` and `npm.cmd run db:local`.
 2. Create ignored `.dev.vars` with a strong `TEACHER_PASSWORD`, a random `SESSION_SECRET`, and `ALLOWED_EXTENSION_IDS=amlfomdhhaklmifkneplnngkbaabibgp`. Run `npm.cmd run dev -- --ip 127.0.0.1 --port 8787`.
-3. Run `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/package-demo.ps1`. Check the ZIP SHA-256 against `public/downloads/exam-monitor-v0.2.0.sha256` and the public page at `http://127.0.0.1:8787/`.
+3. Run `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/package-demo.ps1`. Check the ZIP SHA-256 against `public/downloads/exam-monitor-v0.2.0.sha256` and the public page at `http://127.0.0.1:8787/`. Click **Check connection** on that page and verify it reports the service version.
 4. In a clean Chrome profile, load `dist/exam-monitor-v0.2.0/extension` as unpacked. Confirm its ID is `amlfomdhhaklmifkneplnngkbaabibgp`. Register the native host with `powershell -NoProfile -ExecutionPolicy Bypass -File dist/exam-monitor-v0.2.0/native-host/install.ps1 -ExtensionId amlfomdhhaklmifkneplnngkbaabibgp`, then reload the extension.
 
 ## Student and teacher flow

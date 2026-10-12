@@ -36,10 +36,16 @@ test('teacher access, one-use codes, delivery retries, ending, and private servi
     });
     assert.equal(codeResponse.status, 201);
     const code = codeResponse.data.codes[0].code;
+    assert.equal((await call(`/api/teacher/exams/${exam.id}/codes`,{
+      method:'POST',cookie,value:{studentIds:['DEMO002','DEMO001']}
+    })).status,409);
+    assert.equal((await call(`/api/teacher/exams/${exam.id}/codes`,{
+      method:'POST',cookie,value:{studentIds:['DEMO002']}
+    })).status,201);
     const beforePair = await call(`/api/teacher/exams/${exam.id}/sessions`,{cookie});
-    assert.equal(beforePair.data.sessions[0].student_id,'DEMO001');
-    assert.equal(beforePair.data.sessions[0].status,'NOT_PAIRED');
-    assert.equal(beforePair.data.sessions[0].id,null);
+    const assigned = beforePair.data.sessions.find(s => s.student_id === 'DEMO001');
+    assert.equal(assigned.status,'NOT_PAIRED');
+    assert.equal(assigned.id,null);
     assert.equal((await call('/api/student/pair',{method:'POST',value:{code:'0000000000000000'}})).status,403);
     const pair = await call('/api/student/pair',{method:'POST',value:{code},origin:extensionOrigin});
     assert.equal(pair.status,201,JSON.stringify(pair.data));
@@ -55,24 +61,32 @@ test('teacher access, one-use codes, delivery retries, ending, and private servi
     const events = [
       incident(1,'EXAM_STARTED'),
       incident(2,'AI_SITE_OPENED',{severity:'HIGH',hostname:'chatgpt.com',domainCategory:'AI_PLATFORM',details:'secret prompt'}),
-      incident(3,'EXAM_ENDED')
+      incident(3,'DESKTOP_APP_ACTIVE',{severity:'MEDIUM',source:'WINDOWS_HOST',appCategory:'WORD',details:'secret document path'}),
+      incident(4,'EXAM_ENDED')
     ];
     const batch = {incidents:events};
-    assert.equal((await call('/api/student/events',{method:'POST',credential,value:batch})).data.acknowledgedSequence,3);
-    assert.equal((await call('/api/student/events',{method:'POST',credential,value:batch})).data.acknowledgedSequence,3);
-    assert.equal((await call('/api/student/end',{method:'POST',credential,value:{reason:'MANUAL',lastSequence:2}})).status,409);
-    assert.equal((await call('/api/student/end',{method:'POST',credential,value:{reason:'MANUAL',lastSequence:3}})).status,200);
-    assert.equal((await call('/api/student/events',{method:'POST',credential,value:{incidents:[incident(4,'WEBPAGE_OPENED')]}})).status,409);
+    assert.equal((await call('/api/student/events',{method:'POST',credential,value:batch})).data.acknowledgedSequence,4);
+    assert.equal((await call('/api/student/events',{method:'POST',credential,value:batch})).data.acknowledgedSequence,4);
+    const alteredRetry = {incidents:events.map(item => item.sequence === 2
+      ? {...item,hostname:'evil.example',details:'changed'} : item)};
+    assert.equal((await call('/api/student/events',{method:'POST',credential,value:alteredRetry})).data.acknowledgedSequence,4);
+    assert.equal((await call('/api/student/end',{method:'POST',credential,value:{reason:'MANUAL',lastSequence:3}})).status,409);
+    assert.equal((await call('/api/student/end',{method:'POST',credential,value:{reason:'MANUAL',lastSequence:4}})).status,200);
+    assert.equal((await call('/api/student/events',{method:'POST',credential,value:{incidents:[incident(5,'WEBPAGE_OPENED')]}})).status,409);
     const sessions = await call(`/api/teacher/exams/${exam.id}/sessions`,{cookie});
-    assert.equal(sessions.data.sessions[0].event_count,3);
-    assert.equal(sessions.data.sessions[0].end_reason,'MANUAL');
+    const ended = sessions.data.sessions.find(s => s.student_id === 'DEMO001');
+    assert.equal(ended.event_count,4);
+    assert.equal(ended.end_reason,'MANUAL');
     const report = await call(`/api/teacher/sessions/${pair.data.sessionId}/report.json`,{cookie});
     assert.equal(report.status,200);
-    assert.equal(report.data.incidents.length,3);
+    assert.equal(report.data.incidents.length,4);
     assert.equal(report.data.studentId,'DEMO001');
     assert.equal(report.data.incidents[1].hostname,'chatgpt.com');
+    assert.equal(report.data.incidents[2].appCategory,'WORD');
+    assert.equal(report.data.incidents[2].source,'WINDOWS_HOST');
     assert.ok(!JSON.stringify(report.data).includes(privatePath));
     assert.ok(!JSON.stringify(report.data).includes('secret prompt'));
+    assert.ok(!JSON.stringify(report.data).includes('secret document path'));
     assert.ok(!JSON.stringify(report.data).includes(credential));
   });
 
@@ -85,6 +99,13 @@ test('extension CORS permits configured origin and rejects unrelated origins',
     const rejected = await call('/api/student/pair',{method:'POST',origin:'https://evil.example',value:{code:'0000000000000000'}});
     assert.equal(rejected.status,403);
   });
+
+test('public connection check reports service readiness', {skip: !base}, async () => {
+  const result = await call('/api/health');
+  assert.equal(result.status,200);
+  assert.equal(result.data.status,'ok');
+  assert.equal(result.data.version,'0.2.0');
+});
 
 test('teacher accepts signed-in Google Forms links and stores a canonical respondent URL',
   {skip: !base || !password}, async () => {

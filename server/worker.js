@@ -180,14 +180,15 @@ async function teacherApi(request, env, path) {
         new Set(ids).size !== ids.length) return error(400, "Enter up to 100 unique student IDs.");
     const now = new Date().toISOString();
     const codes = [];
+    const statements = [];
     for (const studentId of ids) {
       const code = token(8);
-      try {
-        await env.DB.prepare("INSERT INTO join_codes (code_hash,exam_id,student_id,created_at) VALUES (?,?,?,?)")
-          .bind(await digest(code), exam.id, studentId, now).run();
-      } catch { return error(409, "A student ID already has a code for this exam."); }
+      statements.push(env.DB.prepare("INSERT INTO join_codes (code_hash,exam_id,student_id,created_at) VALUES (?,?,?,?)")
+        .bind(await digest(code), exam.id, studentId, now));
       codes.push({ studentId, code });
     }
+    try { await env.DB.batch(statements); }
+    catch { return error(409, "A student ID already has a code for this exam."); }
     return response({ codes }, 201);
   }
   const sessionsMatch = path.match(/^\/api\/teacher\/exams\/([a-f0-9-]+)\/sessions$/);
@@ -322,6 +323,7 @@ export default {
   async fetch(request, env) {
     try {
       const path = route(request);
+      if (path === "/api/health" && request.method === "GET") return response({ status: "ok", version: "0.2.0" });
       if (path.startsWith("/api/teacher/")) return teacherApi(request, env, path);
       if (path.startsWith("/api/student/")) {
         const headers = studentCors(request, env);

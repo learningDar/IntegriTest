@@ -120,6 +120,9 @@ test('paired extension rejects wrong Form, retries events, and ends only after o
     assert.equal(state.activeSession,null);
     assert.equal(state.lastSession.endReason,'FORM_SUBMISSION_OBSERVED');
     assert.equal(state.lastSession.remoteEndAck,true);
+    const localReport = buildReport(state);
+    assert.ok(!JSON.stringify(localReport).includes(state.pairing.credential));
+    assert.ok(!JSON.stringify(localReport).includes(state.pairing.formUrl));
     const reportResponse = await fetch(serviceUrl+`/api/teacher/sessions/${state.lastSession.id}/report.json`,{headers:{cookie}});
     const report = await reportResponse.json();
     assert.equal(report.incidents.length,state.incidents.length);

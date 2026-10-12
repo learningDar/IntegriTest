@@ -42,7 +42,7 @@ async function loadSessions() {
     const row = document.createElement("div"); row.className = "session";
     const title = document.createElement("strong"); title.textContent = `${session.student_id} · ${session.status}`;
     const contact = document.createElement("p");
-    contact.className = session.connection === "GAP" ? "gap" : "connected";
+    contact.className = session.connection === "GAP" ? "gap" : session.connection === "CONNECTED" ? "connected" : "neutral";
     contact.textContent = `Contact: ${session.connection} · Last: ${session.last_contact ? new Date(session.last_contact).toLocaleString() : "never"}`;
     const detail = document.createElement("p");
     detail.textContent = `${session.event_count} events · End: ${session.end_reason || "pending"}`;
