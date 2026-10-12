@@ -35,3 +35,7 @@ h2{font-size:1.3rem}h3{font-size:1.08rem}
 .preview-list{max-height:170px;overflow:auto;margin:.45rem 0;padding-left:1.5rem;color:var(--text)}
 .row-error{color:var(--warning);margin:.25rem 0}
 .code-actions{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.8rem}
+.filter-label{display:block;margin:.6rem 0 .35rem;font-size:.88rem;font-weight:750}
+.exam-search{display:block;width:100%;border:1px solid var(--line);border-radius:9px;background:var(--surface);color:var(--text);padding:.72rem .8rem;font:inherit}
+.exam-search::placeholder{color:var(--muted);opacity:.75}
+.filter-count{margin:.4rem 0 .8rem;color:var(--muted);font-size:.78rem}

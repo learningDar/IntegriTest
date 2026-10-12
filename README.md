@@ -4,7 +4,7 @@
 
 [Setup](#installation--setup) · [Professor guide](#user-guide) · [Architecture](#system-architecture--components) · [Test results](#test-results) · [Limitations](#limitations)
 
-> **Status · October 12, 2026:** The v0.1.2 local Chrome and Windows monitor on `main` passed live checks. Phase 3 development is on `feat/phase3-teacher-monitoring`. Its v0.3.0 class roster and teacher APIs passed 22 local automated checks, including live requests to the local Worker. The new package still needs a full guided Chrome check; HTTPS and separate-device monitoring remain unverified. Incidents are observations, not cheating verdicts.
+> **Status · October 12, 2026:** The v0.1.2 local Chrome and Windows monitor on `main` passed live checks. Phase 3 development is on `feat/phase3-teacher-monitoring`. Its v0.3.0 local Worker passed 22 automated checks. A guided Chrome run confirmed live delivery, supported browser and Windows categories, manual and submission-based ending, and a post-End boundary. The professor view also passed a live roster import with a leading-zero ID. Offline browser retry and the complete local gate remain open; HTTPS and separate-device monitoring are unverified. Incidents are observations, not cheating verdicts.
 
 ## PROJECT OVERVIEW
 
@@ -25,11 +25,11 @@ Google Forms does not give a professor a record of tab changes or supported desk
 
 | Component | Behavior | Evidence |
 | --- | --- | --- |
-| Chrome extension | Start/end, tab and focus changes, fullscreen, copy/paste, local timeline and JSON, webpage/ChatGPT/PDF categories | v0.1.2 live gate passed; v0.3.0 guided gate pending |
+| Chrome extension | Start/end, tab and focus changes, fullscreen, copy/paste, local timeline and JSON, webpage/ChatGPT/PDF categories | v0.1.2 live gate passed; v0.3.0 guided local check partly passed |
 | Windows companion | Foreground Word, Notepad, and verified Adobe Acrobat categories; disconnect signal | v0.1.2 live gate passed on the development machine |
-| Professor service | Protected Form records, `.xlsx` classes, one-use codes, 10-second dashboard refresh, per-student timeline, JSON, 30-day cleanup | v0.3.0 local automated/API checks passed; full live and HTTPS gates pending |
+| Professor service | Protected Form records, `.xlsx` classes, one-use codes, 10-second dashboard refresh, per-student timeline, JSON, 30-day cleanup | v0.3.0 automated/API checks and live roster/timeline checks passed; full local and HTTPS gates pending |
 
-The popup warns when other tabs are open in the same Chrome window. **Start in fullscreen** is off by default so window controls remain visible; students can opt in. A confirmed Form submission should end monitoring; **End Examination** remains available. Question timing, screenshot-key detection, CSV, and scoring are deferred.
+The popup warns when other tabs are open in the same Chrome window. **Start in fullscreen** is off by default so window controls remain visible; students can opt in. A confirmed Form submission ends monitoring in the tested practice Form; **End Examination** remains available. Question timing, screenshot-key detection, CSV, and scoring are deferred.
 
 ## SYSTEM ARCHITECTURE / COMPONENTS
 
@@ -103,11 +103,14 @@ Run `npm.cmd test`. With the local Worker running, set `SERVICE_TEST_URL=http://
 | 30-day local retention check | A disposable old exam, code, session, and incident were removed by the scheduled handler; the earlier 46-event session remained |
 | Local contact-gap check | An aged active session showed `GAP`; a heartbeat returned it to `CONNECTED` |
 | Wrangler deployment dry run | Worker, D1 binding, and 13 current public assets bundled successfully; no deployment was made |
-| v0.3.0 guided Chrome/Form and separate-device HTTPS gates | **Pending** |
+| v0.3.0 live local student flow | Student 1 paired and connected; the service received 46 unique, ordered incidents including a webpage, ChatGPT, Chrome PDF, Notepad, Word, and Adobe Acrobat before manual End. Student 3's incomplete Form showed validation errors and stayed Monitoring; its completed practice Form ended automatically with `FORM_SUBMISSION_OBSERVED` and 41 unique, ordered incidents. A later page visit left the service report at 41. Service JSON contained approved incident fields and no answer text, full URLs, or document paths. |
+| v0.3.0 live professor flow | Password-protected view showed Student 3's ended status, 41-event timeline, and service JSON link. A dummy `.xlsx` preview kept text ID `0012`, the class saved, and assigning it generated one-use codes and Student 1/Student 2 rows. Exam-title search narrowed 77 local test records to the selected exam. |
+| v0.3.0 offline browser retry and complete local gate | **Pending.** API retry/idempotency and aged-session gap checks passed; an actual Chrome session through a Worker outage has not been observed. |
+| Separate-device HTTPS gate | **Pending.** No hosted service or remote device test has been run. |
 
 <details><summary>Earlier test history</summary>
 
-The local browser and Windows phases were demonstrated before the teacher service was added. The v0.2.0 live run established local pairing and delivery, and a later post-End page visit left the service report unchanged. Form submission and the v0.3.0 guided Chrome flow remain unverified. The automatic approval system reached a usage limit during the original after-End visit; it did not report an unsafe-action finding.
+The local browser and Windows phases were demonstrated before the teacher service was added. The v0.2.0 live run established local pairing and delivery, and a later post-End page visit left the service report unchanged. The v0.3.0 guided Chrome/Form and professor checks above are partial local gate evidence. The automatic approval system reached a usage limit during the original after-End visit; it did not report an unsafe-action finding.
 
 </details>
 
@@ -117,7 +120,7 @@ The extension cannot observe another browser or device. A foreground app categor
 
 ## CONCLUSION
 
-The local monitor is demonstrable. Phase 3's class roster and delivery service pass local automated checks, while the new guided Chrome flow and deployed remote operation still require acceptance before being presented as working remotely.
+The local monitor is demonstrable. Phase 3's roster, delivery, and Form submission paths have passed the local checks listed above. The offline browser retry scenario, remaining local acceptance, and deployed separate-device flow must pass before remote monitoring is presented as operational.
 
 ## APPENDICES
 

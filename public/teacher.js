@@ -3,6 +3,7 @@ let selectedExam = null;
 let selectedReport = null;
 let rosterPreview = null;
 let refreshBusy = false;
+let allExams = [];
 
 async function api(path, options = {}) {
   const response = await fetch(path, {
@@ -29,7 +30,10 @@ function clearPrivateView() {
   selectedExam = null;
   selectedReport = null;
   rosterPreview = null;
+  allExams = [];
   $("class-form").reset();
+  $("exam-search").value = "";
+  $("exam-match-count").textContent = "";
   $("save-class").disabled = true;
   for (const id of ["exam-list", "class-list", "selected-class", "roster-preview", "sessions", "timeline", "codes-text", "report-meta", "selected-form", "selected-title"])
     $(id).replaceChildren();
@@ -52,10 +56,13 @@ function friendlyEnd(reason) {
   return ({ MANUAL: "Manual end", FORM_SUBMISSION_OBSERVED: "Form submission observed" })[reason] || "Still open";
 }
 
-async function loadExams() {
-  const { exams } = await api("/api/teacher/exams");
+function renderExamList() {
+  const query = $("exam-search").value.trim().toLocaleLowerCase();
+  const exams = allExams.filter(exam => exam.title.toLocaleLowerCase().includes(query));
+  $("exam-match-count").textContent = `${exams.length} of ${allExams.length} exams`;
   $("exam-list").replaceChildren();
-  if (!exams.length) { $("exam-list").textContent = "No exam records yet. Register a Form above."; return exams; }
+  if (!allExams.length) { $("exam-list").textContent = "No exam records yet. Register a Form above."; return; }
+  if (!exams.length) { $("exam-list").textContent = "No exam titles match this search."; return; }
   for (const exam of exams) {
     const button = element("button", "exam-button");
     button.type = "button";
@@ -65,6 +72,11 @@ async function loadExams() {
     button.addEventListener("click", () => selectExam(exam).catch(error => notice(error.message)));
     $("exam-list").append(button);
   }
+}
+async function loadExams() {
+  const { exams } = await api("/api/teacher/exams");
+  allExams = exams;
+  renderExamList();
   return exams;
 }
 
@@ -134,7 +146,7 @@ async function loadSessions() {
     const card = element("article", "session-card");
     const top = element("div", "session-top");
     const badge = element("span", `badge ${session.status === "ACTIVE" ? "badge-active" : ""}`, friendlyStatus(session.status));
-    top.append(element("strong", "", session.student_name ? `${session.student_name} ? ${session.student_id}` : session.student_id), badge);
+    top.append(element("strong", "", session.student_name ? `${session.student_name} · ${session.student_id}` : session.student_id), badge);
     const contact = session.connection === "GAP" ? "Connection gap"
       : session.connection === "CONNECTED" ? "Connected"
       : session.status === "PAIRED" ? "Paired, not started"
@@ -203,11 +215,13 @@ $("logout").addEventListener("click", async () => {
     notice("Signed out.");
   } catch (error) { notice(error.message); }
 });
+$("exam-search").addEventListener("input", renderExamList);
 $("exam-form").addEventListener("submit", async event => {
   event.preventDefault();
   try {
     const { exam } = await api("/api/teacher/exams", jsonPost({ title: $("exam-title").value, formUrl: $("form-url").value }));
     $("exam-form").reset();
+    $("exam-search").value = "";
     await loadExams();
     await selectExam({ id: exam.id, title: exam.title, form_url: exam.formUrl });
     notice("Exam record created.");
