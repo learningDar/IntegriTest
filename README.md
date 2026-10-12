@@ -94,6 +94,7 @@ Run `npm.cmd test`. With the local Worker running, set `SERVICE_TEST_URL=http://
 | Interrupted v0.2.0 local teacher session | Paired and connected; service received 46 ordered incidents including webpage, ChatGPT, Chrome PDF, and Notepad; manual End recorded. The planned after-End webpage visit was not executed. |
 | v0.3.0 automated tests with local Worker | **22/22 passed** on October 12, 2026, including class reuse, one-use codes, snapshots, privacy, retry, and end boundary |
 | 30-day local retention check | A disposable old exam, code, session, and incident were removed by the scheduled handler; the earlier 46-event session remained |
+| Local contact-gap check | An aged active session showed `GAP`; a heartbeat returned it to `CONNECTED` |
 | Wrangler deployment dry run | Worker, D1 binding, and 13 current public assets bundled successfully; no deployment was made |
 | v0.3.0 guided Chrome/Form and separate-device HTTPS gates | **Pending** |
 
