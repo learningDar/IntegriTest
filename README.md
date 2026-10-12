@@ -72,6 +72,8 @@ Chrome Manifest V3, JavaScript/HTML/CSS, Chrome storage/alarms/native messaging,
 
 The v0.3.0 ZIP targets localhost. Its [SHA-256 file](public/downloads/integritest-v0.3.0.sha256) identifies the exact package. The local password is outside Git. A reachable HTTPS package will be built for its exact deployed origin after the local gate passes.
 
+**HTTPS release after the local gate:** Cloudflare Workers and D1 are the selected host because the same Worker, static pages, scheduled cleanup, and D1 schema already run locally. Sign in with `npx wrangler login`, create `integritest` with `npx wrangler d1 create integritest`, replace the placeholder D1 ID in `wrangler.jsonc`, and apply migrations with `npx wrangler d1 migrations apply integritest --remote`. Set `TEACHER_PASSWORD`, `SESSION_SECRET`, and `ALLOWED_EXTENSION_IDS` with `npx wrangler secret put NAME`, then run `npx wrangler deploy`. Rebuild the package with `scripts/package-demo.ps1 -ServiceOrigin https://YOUR_WORKER_ORIGIN`, verify its checksum, and deploy the updated static assets. Pairing, delivery, gaps, ending, teacher access, and JSON privacy still require a separate Windows device before remote monitoring is called operational. See [Cloudflare's D1 local development](https://developers.cloudflare.com/d1/best-practices/local-development/) and [static assets](https://developers.cloudflare.com/workers/static-assets/binding/) guides.
+
 ## USER GUIDE
 
 **Student:** Obtain a one-time code from the professor. Pair in the extension popup, open the registered Form link, choose whether to start in fullscreen, and select **Start Examination**. After submitting, check the status. If still Monitoring, select **End Examination**. Local JSON export is a fallback if delivery fails.

@@ -137,6 +137,7 @@ test('teacher access, one-use codes, delivery retries, ending, and private servi
     assert.equal(report.status,200);
     assert.equal(report.data.incidents.length,4);
     assert.equal(report.data.studentId,'Student 1');
+    assert.equal(report.data.studentName,null);
     assert.equal(report.data.incidents[1].hostname,'chatgpt.com');
     assert.equal(report.data.incidents[2].appCategory,'WORD');
     assert.equal(report.data.incidents[2].source,'WINDOWS_HOST');
