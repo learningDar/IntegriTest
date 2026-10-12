@@ -1,6 +1,6 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
-  "name": "exam-integrity-monitor",
+  "name": "integritest",
   "main": "server/worker.js",
   "compatibility_date": "2026-10-12",
   "assets": {
@@ -10,7 +10,7 @@
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "exam-monitor",
+      "database_name": "integritest",
       "database_id": "00000000-0000-0000-0000-000000000000",
       "migrations_dir": "server/migrations"
     }
