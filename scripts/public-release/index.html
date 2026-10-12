@@ -3,8 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Setup guide · Exam Integrity Monitor</title>
-  <script>try{document.documentElement.dataset.theme=localStorage.getItem('exam-monitor-theme')||'light'}catch{document.documentElement.dataset.theme='light'}</script>
+  <title>Setup guide · IntegriTest</title>
+  <link rel="icon" type="image/svg+xml" href="eye.svg">
+  <script>try{document.documentElement.dataset.theme=localStorage.getItem('integritest-theme')||'dark'}catch{document.documentElement.dataset.theme='dark'}</script>
   <style>
     :root{color-scheme:light;font:16px/1.55 "Segoe UI",system-ui,sans-serif;--bg:#f2f6fa;--surface:#fff;--text:#102a39;--muted:#4d6674;--line:#cbdce3;--accent:#006f83;--soft:#edf5f8}
     :root[data-theme=dark]{color-scheme:dark;--bg:#071521;--surface:#102534;--text:#e9f5f9;--muted:#a8c3ce;--line:#345466;--accent:#57d8c7;--soft:#142e3d}
@@ -14,29 +15,33 @@
     .eyebrow{font-size:.76rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#84e4d4}.lead{font-size:1.1rem}.status{background:var(--soft);border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:10px;padding:1rem;margin:1.3rem 0}
     .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem}.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:1.4rem;margin:0 0 1rem}.card h2{margin-top:0}li{margin:.75rem 0;color:var(--muted)}li strong{color:var(--text)}
     code{background:var(--soft);color:var(--text);padding:.1rem .25rem;overflow-wrap:anywhere}p{color:var(--muted)}.small{font-size:.9rem}footer{border-top:1px solid var(--line);padding-top:1rem;margin-top:2rem;color:var(--muted)}@media(max-width:600px){header{flex-wrap:wrap}}
+    :root{font-size:14px;--bg:#080808;--surface:#141416;--text:#f4f4f5;--muted:#a1a1aa;--line:#37373e;--accent:#a5b4fc;--soft:#1b1b20;color-scheme:dark}
+    :root[data-theme=light]{color-scheme:light;--bg:#f4f4f5;--surface:#fff;--text:#18181b;--muted:#52525b;--line:#d4d4d8;--accent:#3c4bb4;--soft:#ececf0}
+    header{background:#0b0b0d;color:#f4f4f5}.hero{background:linear-gradient(130deg,#111114,#20212a 67%,#292c3c)}.hero h1{font-size:clamp(1.8rem,3vw,2.8rem)}.hero p{color:#e4e4e7}.eyebrow{color:#a5b4fc}
   </style>
 </head>
-<body><header><strong>◆ &nbsp; Exam Integrity Monitor</strong><button id="theme-toggle" type="button" aria-label="Switch to dark mode">Dark mode</button></header><main>
+<body><header><strong><img src="integritest-mark.svg" width="28" height="28" alt=""> &nbsp; IntegriTest</strong><button id="theme-toggle" type="button" aria-label="Switch to dark mode">Dark mode</button></header><main>
   <section class="hero"><p class="eyebrow">Google Forms · guided setup</p><h1>A clear path from quiz to review.</h1><p class="lead">The monitor records observable browser and supported Windows app activity for professor review. An incident is not proof of cheating.</p></section>
   <p class="status"><strong>Preview package:</strong> v{{VERSION}} currently connects to a teacher service on the same computer at <code>127.0.0.1:8787</code>. Live Chrome and hosted remote checks are pending. Use this page for local setup only.</p>
   <div class="grid">
     <section class="card"><h2>Student</h2><ol>
-      <li>Use Windows and Chrome. <a href="exam-monitor-v{{VERSION}}.zip" download>Download the setup ZIP</a> and compare its <a href="exam-monitor-v{{VERSION}}.sha256">SHA-256 checksum</a>.</li>
-      <li>Extract it. Open <code>chrome://extensions</code>, enable Developer mode, choose <strong>Load unpacked</strong>, and select the <code>extension</code> folder <strong>inside</strong> <code>exam-monitor-v{{VERSION}}</code>. It must contain <code>manifest.json</code>. A missing-manifest error means the outer folder was selected.</li>
+      <li>Use Windows and Chrome. <a href="integritest-v{{VERSION}}.zip" download>Download the setup ZIP</a> and compare its <a href="integritest-v{{VERSION}}.sha256">SHA-256 checksum</a>.</li>
+      <li>Extract it. Open <code>chrome://extensions</code>, enable Developer mode, choose <strong>Load unpacked</strong>, and select the <code>extension</code> folder <strong>inside</strong> <code>integritest-v{{VERSION}}</code>. It must contain <code>manifest.json</code>. A missing-manifest error means the outer folder was selected.</li>
       <li>In PowerShell from the extracted folder, run <code>powershell -NoProfile -ExecutionPolicy Bypass -File native-host\install.ps1 -ExtensionId amlfomdhhaklmifkneplnngkbaabibgp</code>. Reload the extension.</li>
       <li>Enter the one-time code from your professor in the extension popup. Open the Form link shown there, then start monitoring.</li>
       <li>Submit the Form and check that monitoring ended. If it remains active, choose <strong>End Examination</strong>. Keep the local JSON export if delivery fails.</li>
     </ol></section>
     <section class="card"><h2>Professor</h2><ol>
-      <li>Create a Google Form with a required <strong>Student ID</strong> question and publish its respondent link.</li>
-      <li>Run the private local teacher service, register the Form, and assign IDs such as <code>Student 1</code> and <code>Student 2</code>. Give each student their one-time code.</li>
-      <li>Review assigned IDs, last contact, gaps, and incident reports in the protected teacher view. Match the Student ID with Google Forms responses separately.</li>
+      <li>Create a Google Form and publish its respondent <code>viewform</code> link.</li>
+      <li>Run the private local teacher service, register the Form, import a class roster with Student ID and Name columns, and assign it to the exam. Give each student their own code.</li>
+      <li>Review assigned IDs, last contact, gaps, and incident reports in the protected teacher view. Match the roster entry with Google Forms responses separately.</li>
     </ol><p class="small">The public remote teacher link will be added after the HTTPS deployment and separate-device check.</p></section>
   </div>
   <section class="card"><h2>What is recorded?</h2><p>Incident categories, timestamps, supported app categories, and needed website hostnames. The monitor does not collect answers, document contents, full browsing URLs, window titles, or file paths. A gap shows missed contact, not what happened during it.</p></section>
-  <footer>Read the <a href="README.md">project README</a> for scope, test status, and limitations.</footer>
+  <p><a href="README.md">Project README</a> &middot; <a href="LICENSE">MIT license</a></p>
+  <footer>IntegriTest | Dar Eugenio 2026</footer>
 </main><script>
   const themeButton=document.getElementById('theme-toggle');
   function showTheme(){const dark=document.documentElement.dataset.theme==='dark';themeButton.textContent=dark?'Light mode':'Dark mode';themeButton.setAttribute('aria-label',dark?'Switch to light mode':'Switch to dark mode');themeButton.setAttribute('aria-pressed',String(dark))}
-  themeButton.addEventListener('click',()=>{document.documentElement.dataset.theme=document.documentElement.dataset.theme==='dark'?'light':'dark';try{localStorage.setItem('exam-monitor-theme',document.documentElement.dataset.theme)}catch{}showTheme()});showTheme();
+  themeButton.addEventListener('click',()=>{document.documentElement.dataset.theme=document.documentElement.dataset.theme==='dark'?'light':'dark';try{localStorage.setItem('integritest-theme',document.documentElement.dataset.theme)}catch{}showTheme()});showTheme();
 </script></body></html>

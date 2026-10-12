@@ -8,8 +8,11 @@ $export = Join-Path $root "dist\public-export-v$version"
 $files = @(
     @{ Source = 'scripts\public-release\README.md'; Name = 'README.md' },
     @{ Source = 'scripts\public-release\index.html'; Name = 'index.html' },
-    @{ Source = "public\downloads\exam-monitor-v$version.zip"; Name = "exam-monitor-v$version.zip" },
-    @{ Source = "public\downloads\exam-monitor-v$version.sha256"; Name = "exam-monitor-v$version.sha256" }
+    @{ Source = 'LICENSE'; Name = 'LICENSE' },
+    @{ Source = 'public\brand\integritest-mark.svg'; Name = 'integritest-mark.svg' },
+    @{ Source = 'public\brand\eye.svg'; Name = 'eye.svg' },
+    @{ Source = "public\downloads\integritest-v$version.zip"; Name = "integritest-v$version.zip" },
+    @{ Source = "public\downloads\integritest-v$version.sha256"; Name = "integritest-v$version.sha256" }
 )
 
 New-Item -ItemType Directory -Path $export -Force | Out-Null
@@ -37,14 +40,17 @@ $ignore = @"
 !.gitignore
 !README.md
 !index.html
-!exam-monitor-v$version.zip
-!exam-monitor-v$version.sha256
+!LICENSE
+!integritest-mark.svg
+!eye.svg
+!integritest-v$version.zip
+!integritest-v$version.sha256
 "@
 [System.IO.File]::WriteAllText((Join-Path $export '.gitignore'), $ignore, (New-Object System.Text.UTF8Encoding($false)))
 
-$zip = Join-Path $export "exam-monitor-v$version.zip"
+$zip = Join-Path $export "integritest-v$version.zip"
 $actual = (Get-FileHash -LiteralPath $zip -Algorithm SHA256).Hash.ToLowerInvariant()
-$listed = ((Get-Content -LiteralPath (Join-Path $export "exam-monitor-v$version.sha256") -Raw).Trim() -split '\s+')[0]
+$listed = ((Get-Content -LiteralPath (Join-Path $export "integritest-v$version.sha256") -Raw).Trim() -split '\s+')[0]
 if ($actual -ne $listed) { throw 'The setup ZIP does not match its published checksum.' }
 
 Write-Output "Public export: $export"

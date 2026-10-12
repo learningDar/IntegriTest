@@ -5,6 +5,62 @@ const base = process.env.SERVICE_TEST_URL;
 const password = process.env.SERVICE_TEST_PASSWORD;
 const extensionOrigin = 'chrome-extension://amlfomdhhaklmifkneplnngkbaabibgp';
 
+test('class roster persists across exams and snapshots names after deletion',
+  { skip: !base || !password }, async () => {
+    const login = await call('/api/teacher/login',{method:'POST',value:{password}});
+    const cookie = login.headers.get('set-cookie').split(';')[0];
+    const students = [{studentId:'0012',name:'Student 1'},{studentId:'A-2',name:'Student 2'}];
+    const fullRoster = Array.from({length:100},(_,index) => ({
+      studentId:`S${String(index + 1).padStart(3,'0')}`,name:`Student ${index + 1}`
+    }));
+    assert.equal((await call('/api/teacher/classes',{method:'POST',cookie,value:{
+      name:'Too many',students:[...fullRoster,{studentId:'S101',name:'Student 101'}]
+    }})).status,400);
+    const fullClass = await call('/api/teacher/classes',{method:'POST',cookie,value:{name:'Full class',students:fullRoster}});
+    assert.equal(fullClass.status,201,JSON.stringify(fullClass.data));
+    assert.equal((await call(`/api/teacher/classes/${fullClass.data.class.id}`,{method:'DELETE',cookie})).status,200);
+    assert.equal((await call('/api/teacher/classes',{method:'POST',cookie,value:{
+      name:'Invalid class',students:[...students,students[0]]
+    }})).status,400);
+    const created = await call('/api/teacher/classes',{method:'POST',cookie,value:{name:'Architecture A',students}});
+    assert.equal(created.status,201,JSON.stringify(created.data));
+    const classId = created.data.class.id;
+    const classes = await call('/api/teacher/classes',{cookie});
+    assert.ok(classes.data.classes.some(c => c.id === classId && c.student_count === 2));
+    const makeExam = async () => {
+      const result = await call('/api/teacher/exams',{method:'POST',cookie,value:{
+        title:'Architecture Quiz',formUrl:`https://docs.google.com/forms/d/e/${crypto.randomUUID().replaceAll('-','')}/viewform`
+      }});
+      assert.equal(result.status,201);
+      return result.data.exam.id;
+    };
+    const first = await makeExam();
+    const second = await makeExam();
+    const assign = examId => call(`/api/teacher/exams/${examId}/assign-class`,{
+      method:'POST',cookie,value:{classId}
+    });
+    const codes1 = await assign(first);
+    const codes2 = await assign(second);
+    assert.equal(codes1.status,201,JSON.stringify(codes1.data));
+    assert.equal(codes2.status,201);
+    assert.equal(codes1.data.codes.length,2);
+    assert.notEqual(codes1.data.codes[0].code,codes2.data.codes[0].code);
+    assert.equal((await assign(first)).status,409);
+    const firstCode = codes1.data.codes.find(c => c.studentId === '0012');
+    assert.equal(firstCode.name,'Student 1');
+    const paired = await call('/api/student/pair',{method:'POST',value:{code:firstCode.code},origin:extensionOrigin});
+    assert.equal(paired.status,201,JSON.stringify(paired.data));
+    assert.equal(paired.data.studentName,'Student 1');
+    assert.equal((await call('/api/student/pair',{method:'POST',value:{code:firstCode.code}})).status,403);
+    assert.equal((await call(`/api/teacher/classes/${classId}`,{method:'DELETE',cookie})).status,200);
+    const sessions = await call(`/api/teacher/exams/${first}/sessions`,{cookie});
+    assert.equal(sessions.data.sessions.find(s => s.student_id === '0012').student_name,'Student 1');
+    const report = await call(`/api/teacher/sessions/${paired.data.sessionId}/report.json`,{cookie});
+    assert.equal(report.data.studentName,'Student 1');
+    assert.equal(report.data.incidents.length,0);
+    assert.ok(!JSON.stringify(report.data.incidents).includes('Student 1'));
+  });
+
 async function call(path, { method = 'GET', value, cookie, credential, origin } = {}) {
   const headers = {};
   if (value !== undefined) headers['content-type'] = 'application/json';
@@ -104,7 +160,7 @@ test('public connection check reports service readiness', {skip: !base}, async (
   const result = await call('/api/health');
   assert.equal(result.status,200);
   assert.equal(result.data.status,'ok');
-  assert.equal(result.data.version,'0.2.0');
+  assert.equal(result.data.version,'0.3.0');
 });
 
 test('teacher accepts signed-in Google Forms links and stores a canonical respondent URL',

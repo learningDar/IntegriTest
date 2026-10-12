@@ -1,4 +1,4 @@
-# Google Forms Exam Integrity Monitor
+# IntegriTest
 
 > **Preview status:** The local browser and Windows monitoring build has passed live checks. The v{{VERSION}} teacher-service package has passed automated and local API checks, but its live Chrome and hosted remote checks remain pending. This public export is prepared for later release; it is not yet a verified remote-monitoring deployment.
 
@@ -26,7 +26,7 @@ Google Forms alone does not show an instructor when a student opens another webp
 
 ## SYSTEM FEATURES
 
-The verified local monitor records session start/end, Chrome tab and focus changes, fullscreen changes, copy/paste attempts, and supported Windows foreground app categories. The v{{VERSION}} preview adds pairing, queued delivery, a teacher view, a same-window tab warning, connection status, and an automatic end after an observed Form submission confirmation. Remote operation is still under test.
+The verified local monitor records session start/end, Chrome tab and focus changes, fullscreen changes, copy/paste attempts, and supported Windows foreground app categories. The v{{VERSION}} preview adds class rosters, pairing, queued delivery, a teacher view, a same-window tab warning, connection status, and an automatic end after an observed Form submission confirmation. Remote operation is still under test.
 
 ## SYSTEM ARCHITECTURE / COMPONENTS
 
@@ -34,7 +34,7 @@ A Chrome extension records browser events and stores incidents locally. A small 
 
 ## SYSTEM WORKFLOW
 
-The professor registers an existing Google Form with a required **Student ID** question and assigns labels such as `Student 1` and `Student 2`. Each label gets a one-time code. The student pairs the extension, opens the registered Form, starts monitoring, and submits. The extension keeps a local report and attempts to deliver events to the teacher service. The professor compares the assigned ID with the separate Google Forms response. A join code does not verify a person's identity.
+The professor registers an existing Google Form, imports a class roster with names and IDs, and assigns that class to the exam. Each student gets a fresh one-time code. The student pairs the extension, opens the registered Form, starts monitoring, and submits. The extension keeps a local report and attempts to deliver events to the teacher service. The professor matches the assigned roster entry with the separate Google Forms response. A join code does not verify a person's identity.
 
 ## TOOLS & TECHNOLOGIES
 
@@ -42,8 +42,8 @@ Google Chrome Manifest V3, JavaScript, Windows PowerShell, a C# native messaging
 
 ## INSTALLATION / SETUP
 
-1. Download [exam-monitor-v{{VERSION}}.zip](exam-monitor-v{{VERSION}}.zip) and compare its SHA-256 with [exam-monitor-v{{VERSION}}.sha256](exam-monitor-v{{VERSION}}.sha256).
-2. Extract the ZIP. In Chrome, open `chrome://extensions`, enable **Developer mode**, choose **Load unpacked**, and select the `extension` folder inside `exam-monitor-v0.2.0`. This folder contains `manifest.json`; selecting the outer folder causes a missing-manifest error. Check that Chrome shows extension ID `amlfomdhhaklmifkneplnngkbaabibgp`.
+1. Download [integritest-v{{VERSION}}.zip](integritest-v{{VERSION}}.zip) and compare its SHA-256 with [integritest-v{{VERSION}}.sha256](integritest-v{{VERSION}}.sha256).
+2. Extract the ZIP. In Chrome, open `chrome://extensions`, enable **Developer mode**, choose **Load unpacked**, and select the `extension` folder inside `integritest-v{{VERSION}}`. This folder contains `manifest.json`; selecting the outer folder causes a missing-manifest error. Check that Chrome shows extension ID `amlfomdhhaklmifkneplnngkbaabibgp`.
 3. In PowerShell from the extracted folder, run `powershell -NoProfile -ExecutionPolicy Bypass -File native-host\install.ps1 -ExtensionId amlfomdhhaklmifkneplnngkbaabibgp`. Reload the extension afterward.
 4. Open the extension popup and pair with the one-time code from the professor. Open the Form link displayed by the popup.
 
@@ -55,11 +55,11 @@ On the registered Form, open the extension popup and start monitoring. It warns 
 
 ## QUALITY ASSURANCE & TESTING
 
-The browser and Windows foreground phases were checked live on the development machine. The teacher-service preview passed automated extension and local API checks. Live packaged-extension and separate-device HTTPS checks are pending; final combined QA follows those gates.
+The browser and Windows foreground phases were checked live on the development machine. The teacher-service preview passed automated extension and local API checks for class rosters; full live acceptance remains open. Live packaged-extension and separate-device HTTPS checks are pending; final combined QA follows those gates.
 
 ## TEST RESULTS
 
-On October 12, 2026, the private development suite passed 19 of 19 automated checks with a local D1 service. The earlier local browser and Windows live gates passed on October 10–11, 2026. No deployed remote result is claimed.
+Local automated results are recorded in the private development README. Full live acceptance is pending. The earlier local browser and Windows live gates passed on October 10–11, 2026. No deployed remote result is claimed.
 
 ## LIMITATIONS
 
@@ -71,6 +71,8 @@ The local incident monitor is demonstrable. The teacher-delivery preview still n
 
 ## APPENDICES
 
+- [MIT license](LICENSE)
+
 - [Student setup page](index.html)
-- [Versioned setup ZIP](exam-monitor-v{{VERSION}}.zip)
-- [SHA-256 checksum](exam-monitor-v{{VERSION}}.sha256)
+- [Versioned setup ZIP](integritest-v{{VERSION}}.zip)
+- [SHA-256 checksum](integritest-v{{VERSION}}.sha256)

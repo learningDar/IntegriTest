@@ -101,6 +101,25 @@ function canonicalFormLink(value) {
     return { formId: match[1], formUrl: `${url.origin}/forms/d/${url.pathname.includes('/d/e/') ? 'e/' : ''}${match[1]}/viewform` };
   } catch { return null; }
 }
+function validStudentId(value) {
+  return typeof value === "string" && /^[A-Za-z0-9](?:[A-Za-z0-9 _-]{0,38}[A-Za-z0-9])?$/.test(value);
+}
+function validStudentName(value) {
+  return typeof value === "string" && value.trim() === value && value.length > 0 && value.length <= 100 && !/[\r\n<>]/.test(value);
+}
+async function issueCodes(env, examId, students) {
+  const now = new Date().toISOString();
+  const codes = [];
+  const statements = [];
+  for (const student of students) {
+    const code = token(8);
+    statements.push(env.DB.prepare("INSERT INTO join_codes (code_hash,exam_id,student_id,student_name,created_at) VALUES (?,?,?,?,?)")
+      .bind(await digest(code), examId, student.studentId, student.name ?? null, now));
+    codes.push({ studentId: student.studentId, name: student.name ?? null, code });
+  }
+  await env.DB.batch(statements);
+  return codes;
+}
 function route(request) { return new URL(request.url).pathname; }
 async function sessionFor(request, env) {
   const credential = request.headers.get("authorization")?.match(/^Bearer ([a-f0-9]{48})$/)?.[1];
@@ -155,6 +174,35 @@ async function teacherApi(request, env, path) {
   if (path === "/api/teacher/me" && request.method === "GET") return response({ authenticated: true });
   if (path === "/api/teacher/logout" && request.method === "POST")
     return response({ ok: true }, 200, { "set-cookie": teacherCookie("", request, 0) });
+  if (path === "/api/teacher/classes" && request.method === "GET") {
+    const result = await env.DB.prepare(`SELECT c.id,c.name,c.created_at,COUNT(s.student_id) AS student_count
+      FROM classes c LEFT JOIN class_students s ON s.class_id=c.id
+      GROUP BY c.id ORDER BY c.created_at DESC`).all();
+    return response({ classes: result.results });
+  }
+  if (path === "/api/teacher/classes" && request.method === "POST") {
+    const input = await body(request);
+    const name = String(input.name || "").trim();
+    const students = input.students;
+    if (!name || name.length > 120 || !Array.isArray(students) || !students.length || students.length > 100 ||
+        students.some(s => !s || !validStudentId(s.studentId) || !validStudentName(s.name)) ||
+        new Set(students.map(s => s.studentId.toLowerCase())).size !== students.length)
+      return error(400, "Enter a class name and 1 to 100 students with unique IDs and names.");
+    const id = crypto.randomUUID();
+    const createdAt = new Date().toISOString();
+    await env.DB.batch([
+      env.DB.prepare("INSERT INTO classes (id,name,created_at) VALUES (?,?,?)").bind(id,name,createdAt),
+      ...students.map(s => env.DB.prepare("INSERT INTO class_students (class_id,student_id,student_name) VALUES (?,?,?)")
+        .bind(id,s.studentId,s.name))
+    ]);
+    return response({ class: { id, name, createdAt, studentCount: students.length } }, 201);
+  }
+  const classMatch = path.match(/^\/api\/teacher\/classes\/([a-f0-9-]+)$/);
+  if (classMatch && request.method === "DELETE") {
+    const result = await env.DB.prepare("DELETE FROM classes WHERE id=?").bind(classMatch[1]).run();
+    if (!result.meta.changes) return error(404, "Class not found.");
+    return response({ ok: true });
+  }
   if (path === "/api/teacher/exams" && request.method === "GET") {
     const result = await env.DB.prepare("SELECT id, title, form_url, created_at, status FROM exams ORDER BY created_at DESC").all();
     return response({ exams: result.results });
@@ -176,24 +224,29 @@ async function teacherApi(request, env, path) {
     const input = await body(request);
     const ids = input.studentIds;
     if (!Array.isArray(ids) || !ids.length || ids.length > 100 ||
-        ids.some(id => typeof id !== "string" || !/^[A-Za-z0-9][A-Za-z0-9 _-]{0,38}[A-Za-z0-9]$/.test(id)) ||
+        ids.some(id => !validStudentId(id)) ||
         new Set(ids).size !== ids.length) return error(400, "Enter up to 100 unique student IDs.");
-    const now = new Date().toISOString();
-    const codes = [];
-    const statements = [];
-    for (const studentId of ids) {
-      const code = token(8);
-      statements.push(env.DB.prepare("INSERT INTO join_codes (code_hash,exam_id,student_id,created_at) VALUES (?,?,?,?)")
-        .bind(await digest(code), exam.id, studentId, now));
-      codes.push({ studentId, code });
-    }
-    try { await env.DB.batch(statements); }
+    let codes;
+    try { codes = await issueCodes(env, exam.id, ids.map(studentId => ({ studentId }))); }
     catch { return error(409, "A student ID already has a code for this exam."); }
+    return response({ codes }, 201);
+  }
+  const assignMatch = path.match(/^\/api\/teacher\/exams\/([a-f0-9-]+)\/assign-class$/);
+  if (assignMatch && request.method === "POST") {
+    const input = await body(request);
+    const exam = await env.DB.prepare("SELECT id FROM exams WHERE id=? AND status='OPEN'").bind(assignMatch[1]).first();
+    if (!exam) return error(404, "Open exam not found.");
+    const roster = await env.DB.prepare(`SELECT student_id AS studentId,student_name AS name
+      FROM class_students WHERE class_id=? ORDER BY student_id`).bind(input.classId).all();
+    if (!roster.results.length) return error(404, "Class not found or empty.");
+    let codes;
+    try { codes = await issueCodes(env, exam.id, roster.results); }
+    catch { return error(409, "One or more students already have codes for this exam."); }
     return response({ codes }, 201);
   }
   const sessionsMatch = path.match(/^\/api\/teacher\/exams\/([a-f0-9-]+)\/sessions$/);
   if (sessionsMatch && request.method === "GET") {
-    const result = await env.DB.prepare(`SELECT s.id,c.student_id,COALESCE(s.status,'NOT_PAIRED') AS status,s.paired_at,s.started_at,
+    const result = await env.DB.prepare(`SELECT s.id,c.student_id,COALESCE(s.student_name,c.student_name) AS student_name,COALESCE(s.status,'NOT_PAIRED') AS status,s.paired_at,s.started_at,
       s.ended_at,s.end_reason,s.last_contact,s.last_sequence,
       (SELECT COUNT(*) FROM incidents i WHERE i.session_id=s.id) AS event_count
       FROM join_codes c LEFT JOIN sessions s ON s.exam_id=c.exam_id AND s.student_id=c.student_id
@@ -213,10 +266,11 @@ async function teacherApi(request, env, path) {
     const events = await env.DB.prepare("SELECT * FROM incidents WHERE session_id=? ORDER BY sequence")
       .bind(session.id).all();
     const report = {
-      project: "Google Forms Exam Integrity Monitor",
+      project: "IntegriTest",
       exportedAt: new Date().toISOString(),
       exam: { id: session.exam_id, title: session.exam_title },
       studentId: session.student_id,
+      studentName: session.student_name,
       session: {
         id: session.id, startedAt: session.started_at, endedAt: session.ended_at,
         endReason: session.end_reason, lastContact: session.last_contact,
@@ -249,15 +303,15 @@ async function studentApi(request, env, path) {
     try { results = await env.DB.batch([
       env.DB.prepare("UPDATE join_codes SET used_at=? WHERE code_hash=? AND used_at IS NULL").bind(now, codeHash),
       env.DB.prepare(`INSERT INTO sessions
-        (id,exam_id,student_id,token_hash,status,paired_at)
-        SELECT ?,exam_id,student_id,?,?,? FROM join_codes WHERE code_hash=? AND used_at=?`)
+        (id,exam_id,student_id,student_name,token_hash,status,paired_at)
+        SELECT ?,exam_id,student_id,student_name,?,?,? FROM join_codes WHERE code_hash=? AND used_at=?`)
         .bind(sessionId,await digest(credential),"PAIRED",now,codeHash,now)
     ]); } catch { return error(403, "Code is invalid or already used."); }
     if (results[0].meta.changes !== 1 || results[1].meta.changes !== 1)
       return error(403, "Code is already used.");
     return response({
       sessionId, credential, examId: row.exam_id, examTitle: row.title,
-      studentId: row.student_id, formId: row.form_id, formUrl: row.form_url
+      studentId: row.student_id, studentName: row.student_name, formId: row.form_id, formUrl: row.form_url
     }, 201);
   }
   const session = await sessionFor(request, env);
@@ -323,7 +377,7 @@ export default {
   async fetch(request, env) {
     try {
       const path = route(request);
-      if (path === "/api/health" && request.method === "GET") return response({ status: "ok", version: "0.2.0" });
+      if (path === "/api/health" && request.method === "GET") return response({ status: "ok", version: "0.3.0" });
       if (path.startsWith("/api/teacher/")) return teacherApi(request, env, path);
       if (path.startsWith("/api/student/")) {
         const headers = studentCors(request, env);

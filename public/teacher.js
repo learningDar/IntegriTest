@@ -1,6 +1,8 @@
 const $ = id => document.getElementById(id);
 let selectedExam = null;
 let selectedReport = null;
+let rosterPreview = null;
+let refreshBusy = false;
 
 async function api(path, options = {}) {
   const response = await fetch(path, {
@@ -26,7 +28,10 @@ function displayAuth(signedIn) {
 function clearPrivateView() {
   selectedExam = null;
   selectedReport = null;
-  for (const id of ["exam-list", "sessions", "timeline", "codes-text", "report-meta", "selected-form", "selected-title"])
+  rosterPreview = null;
+  $("class-form").reset();
+  $("save-class").disabled = true;
+  for (const id of ["exam-list", "class-list", "selected-class", "roster-preview", "sessions", "timeline", "codes-text", "report-meta", "selected-form", "selected-title"])
     $(id).replaceChildren();
   $("codes-output").hidden = true;
   $("exam-detail").hidden = true;
@@ -63,6 +68,38 @@ async function loadExams() {
   return exams;
 }
 
+async function loadClasses() {
+  const { classes } = await api("/api/teacher/classes");
+  $("class-list").replaceChildren();
+  $("selected-class").replaceChildren();
+  if (!classes.length) $("class-list").textContent = "No classes saved yet.";
+  for (const entry of classes) {
+    const row = element("div", "class-row");
+    row.append(element("span", "", `${entry.name} · ${entry.student_count} students`));
+    const remove = element("button", "button-secondary", "Delete");
+    remove.type = "button";
+    remove.addEventListener("click", async () => {
+      if (!confirm(`Delete class ${entry.name}? Historical exam assignments will remain.`)) return;
+      try {
+        await api(`/api/teacher/classes/${entry.id}`, { method: "DELETE" });
+        await loadClasses();
+        notice("Class deleted. Existing exam records were preserved.");
+      } catch (error) { notice(error.message); }
+    });
+    row.append(remove);
+    $("class-list").append(row);
+    const option = element("option", "", `${entry.name} · ${entry.student_count} students`);
+    option.value = entry.id;
+    $("selected-class").append(option);
+  }
+  return classes;
+}
+function showCodes(codes) {
+  $("codes-text").textContent = codes.map(({ name, studentId, code }) =>
+    `${name ? name + " · " : ""}${studentId} · ${code}`).join("\n");
+  $("codes-output").hidden = false;
+}
+
 async function selectExam(exam) {
   selectedExam = exam;
   selectedReport = null;
@@ -97,7 +134,7 @@ async function loadSessions() {
     const card = element("article", "session-card");
     const top = element("div", "session-top");
     const badge = element("span", `badge ${session.status === "ACTIVE" ? "badge-active" : ""}`, friendlyStatus(session.status));
-    top.append(element("strong", "", session.student_id), badge);
+    top.append(element("strong", "", session.student_name ? `${session.student_name} ? ${session.student_id}` : session.student_id), badge);
     const contact = session.connection === "GAP" ? "Connection gap"
       : session.connection === "CONNECTED" ? "Connected"
       : session.status === "PAIRED" ? "Paired, not started"
@@ -119,11 +156,11 @@ async function loadSessions() {
   }
 }
 
-async function showReport(id) {
+async function showReport(id, scroll = true) {
   const report = await api(`/api/teacher/sessions/${id}/report.json`);
   selectedReport = report;
   $("report-panel").hidden = false;
-  $("report-meta").textContent = `${report.studentId} · ${friendlyStatus(report.session.status)} · ${report.incidents.length} events · ${friendlyEnd(report.session.endReason)}`;
+  $("report-meta").textContent = `${report.studentName ? report.studentName + " · " : ""}${report.studentId} · ${friendlyStatus(report.session.status)} · ${report.incidents.length} events · ${friendlyEnd(report.session.endReason)}`;
   $("timeline").replaceChildren();
   if (!report.incidents.length) $("timeline").append(element("li", "timeline-item", "No incidents received yet."));
   for (const incident of report.incidents) {
@@ -135,7 +172,7 @@ async function showReport(id) {
     if (context) item.append(element("p", "", context));
     $("timeline").append(item);
   }
-  $("report-panel").scrollIntoView({ behavior: "smooth" });
+  if (scroll) $("report-panel").scrollIntoView({ behavior: "smooth" });
 }
 
 $("download-report").addEventListener("click", event => {
@@ -152,7 +189,8 @@ $("login-form").addEventListener("submit", async event => {
     await api("/api/teacher/login", jsonPost({ password: $("password").value }));
     $("password").value = "";
     displayAuth(true);
-    const exams = await loadExams();
+    await loadClasses();
+  const exams = await loadExams();
     if (exams.length) await selectExam(exams[0]);
     notice("Signed in.");
   } catch (error) { notice(error.message); }
@@ -180,16 +218,78 @@ $("codes-form").addEventListener("submit", async event => {
   try {
     const studentIds = $("student-ids").value.split(/\r?\n/).map(value => value.trim()).filter(Boolean);
     const { codes } = await api(`/api/teacher/exams/${selectedExam.id}/codes`, jsonPost({ studentIds }));
-    $("codes-text").textContent = codes.map(code => `${code.studentId}: ${code.code}`).join("\n");
-    $("codes-output").hidden = false;
+    showCodes(codes);
     $("student-ids").value = "";
     await loadSessions();
     notice("Codes created. Share each code privately.");
   } catch (error) { notice(error.message); }
 });
+$("roster-file").addEventListener("change", async event => {
+  rosterPreview = null;
+  $("save-class").disabled = true;
+  $("roster-preview").replaceChildren();
+  try {
+    const result = await RosterReader.readRosterFile(event.target.files[0]);
+    const heading = element("p", "", `${result.students.length} student rows found`);
+    $("roster-preview").append(heading);
+    const list = element("ol", "preview-list");
+    for (const student of result.students) list.append(element("li", "", `${student.name} · ${student.studentId}`));
+    $("roster-preview").append(list);
+    for (const message of result.errors) $("roster-preview").append(element("p", "row-error", message));
+    if (!result.errors.length) {
+      rosterPreview = result.students;
+      $("save-class").disabled = false;
+    }
+  } catch (error) { $("roster-preview").textContent = error.message; }
+});
+$("class-form").addEventListener("submit", async event => {
+  event.preventDefault();
+  if (!rosterPreview) return;
+  try {
+    await api("/api/teacher/classes", jsonPost({ name: $("class-name").value, students: rosterPreview }));
+    rosterPreview = null;
+    $("class-form").reset();
+    $("save-class").disabled = true;
+    $("roster-preview").replaceChildren();
+    await loadClasses();
+    notice("Class saved. Select an exam to generate its codes.");
+  } catch (error) { notice(error.message); }
+});
+$("assign-class-form").addEventListener("submit", async event => {
+  event.preventDefault();
+  try {
+    const { codes } = await api(`/api/teacher/exams/${selectedExam.id}/assign-class`,
+      jsonPost({ classId: $("selected-class").value }));
+    showCodes(codes);
+    await loadSessions();
+    notice("Codes created. Share each code privately; they appear only once.");
+  } catch (error) { notice(error.message); }
+});
+$("copy-codes").addEventListener("click", async () => {
+  try { await navigator.clipboard.writeText($("codes-text").textContent); notice("Codes copied."); }
+  catch { notice("Copy was unavailable; select the text to copy it."); }
+});
+$("download-codes").addEventListener("click", () => {
+  const url = URL.createObjectURL(new Blob([$("codes-text").textContent + "\n"], { type: "text/plain" }));
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `integritest-codes-${selectedExam.id.slice(0, 8)}.txt`;
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+});
 $("refresh-sessions").addEventListener("click", () => loadSessions().then(() => notice("Activity refreshed.")).catch(error => notice(error.message)));
+setInterval(async () => {
+  if ($("teacher-panel").hidden || document.hidden || !selectedExam || refreshBusy) return;
+  refreshBusy = true;
+  try {
+    await loadSessions();
+    if (selectedReport) await showReport(selectedReport.session.id, false);
+  } catch (error) { notice(error.message); }
+  finally { refreshBusy = false; }
+}, 10_000);
 api("/api/teacher/me").then(async () => {
   displayAuth(true);
+  await loadClasses();
   const exams = await loadExams();
   if (exams.length) await selectExam(exams[0]);
 }).catch(() => displayAuth(false));

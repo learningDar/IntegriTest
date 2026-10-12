@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title">
+  <title id="title">IntegriTest laptop and eye</title>
+  <rect width="256" height="256" rx="48" fill="#101114"/>
+  <rect x="39" y="49" width="178" height="127" rx="13" fill="#181a20" stroke="#8a95ff" stroke-width="8"/>
+  <path d="M22 194h212l-13 14H35z" fill="#8a95ff"/>
+  <path d="M65 114c18-24 39-36 63-36s45 12 63 36c-18 24-39 36-63 36s-45-12-63-36z" fill="none" stroke="#e7eaff" stroke-width="9" stroke-linejoin="round"/>
+  <circle cx="128" cy="114" r="19" fill="#8a95ff"/>
+  <circle cx="133" cy="109" r="6" fill="#101114"/>
+</svg>

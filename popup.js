@@ -35,7 +35,9 @@ function render(state) {
   document.getElementById("sync-button").disabled = !session?.remote;
   if (state.pairing) {
     pairDetail.replaceChildren();
-    const label = document.createTextNode(`Assigned Student ID: ${state.pairing.studentId} · ${state.pairing.examTitle} · `);
+    const assigned = state.pairing.studentName
+      ? `${state.pairing.studentName} · ${state.pairing.studentId}` : state.pairing.studentId;
+    const label = document.createTextNode(`Assigned: ${assigned} · ${state.pairing.examTitle} · `);
     const link = document.createElement("a");
     link.href = state.pairing.formUrl; link.target = "_blank"; link.rel = "noopener noreferrer";
     link.textContent = "Open registered Form";
