@@ -29,7 +29,7 @@ Google Forms does not give a professor a record of tab changes or supported desk
 | Windows companion | Foreground Word, Notepad, and verified Adobe Acrobat categories; disconnect signal | v0.1.2 live gate passed on the development machine |
 | Professor service | Protected Form records, `.xlsx` classes, one-use codes, 10-second dashboard refresh, per-student timeline, JSON, 30-day cleanup | v0.3.0 local automated/API checks passed; full live and HTTPS gates pending |
 
-The popup warns when other tabs are open in the same Chrome window. **Start in fullscreen** can be unchecked to keep window controls visible. A confirmed Form submission should end monitoring; **End Examination** remains available. Question timing, screenshot-key detection, CSV, and scoring are deferred.
+The popup warns when other tabs are open in the same Chrome window. **Start in fullscreen** is off by default so window controls remain visible; students can opt in. A confirmed Form submission should end monitoring; **End Examination** remains available. Question timing, screenshot-key detection, CSV, and scoring are deferred.
 
 ## SYSTEM ARCHITECTURE / COMPONENTS
 

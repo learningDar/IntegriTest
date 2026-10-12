@@ -171,7 +171,7 @@ async function status() {
   return readState();
 }
 
-async function startExam(tabId, useFullscreen = true) {
+async function startExam(tabId, useFullscreen = false) {
   if (!Number.isInteger(tabId)) throw new Error("Open a Google Form respondent page first.");
   const tab = await chrome.tabs.get(tabId);
   if (!ExamRules.isSupportedFormUrl(tab.url)) throw new Error("Open a supported Google Form respondent page first.");
@@ -426,7 +426,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       }
       switch (message?.kind) {
         case "GET_STATUS": result = await status(); break;
-        case "START_EXAM": result = await startExam(message.tabId, message.fullscreen !== false); break;
+        case "START_EXAM": result = await startExam(message.tabId, message.fullscreen === true); break;
         case "END_EXAM": result = await endExam(); break;
         case "PAIR_STUDENT": result = await pairStudent(message.code); break;
         case "SYNC_NOW": await syncRemote(); result = await status(); break;

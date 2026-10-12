@@ -291,7 +291,7 @@ test('opening a blank tab does not double-count its first webpage and closing th
 
 test('Chrome window focus and fullscreen transitions produce review signals', async () => {
   const h = harness();
-  await h.send({ kind: 'START_EXAM', tabId: 1 });
+  await h.send({ kind: 'START_EXAM', tabId: 1, fullscreen: true });
   h.windows.get(7).state = 'normal';
   h.listeners.boundsChanged(h.windows.get(7));
   await h.flush();
@@ -314,9 +314,9 @@ test('Chrome window focus and fullscreen transitions produce review signals', as
   }
 });
 
-test('normal-window start keeps Chrome controls visible and still records fullscreen changes', async () => {
+test('default normal-window start keeps Chrome controls visible and still records fullscreen changes', async () => {
   const h = harness();
-  const started = await h.send({ kind: 'START_EXAM', tabId: 1, fullscreen: false });
+  const started = await h.send({ kind: 'START_EXAM', tabId: 1 });
   assert.equal(started.ok, true);
   assert.equal(h.windows.get(7).state, 'normal');
   assert.equal(started.result.activeSession.fullscreenState, 'other');

@@ -2,9 +2,9 @@
 
 Use the [10-question Systems Integration and Architecture Fundamentals practice quiz](https://docs.google.com/forms/d/e/1FAIpQLSdOyiXOUU2YWqp2RFh6SR_-dPf8ZmixAjrT7bZ4EE0TnS7oVQ/viewform) with dummy answers. Load this repository as an unpacked extension from `chrome://extensions` in Developer mode. Record the Chrome version, date, and the observed result for every item before accepting Phase 1.
 
-After each code update, click Reload on the extension card, refresh the Form, and reopen the monitor popup. Confirm the header displays the version in `manifest.json` (currently `v0.1.2`) before starting a new session. Open the test sites in a tab during the active session; a new tab may remain in the background, but its URL update should be recorded. Activate the tab as a separate check for duplicates.
+After each code update, click Reload on the extension card, refresh the Form, and reopen the monitor popup. Confirm the header displays the version in `manifest.json` before starting a new session. Open the test sites in a tab during the active session; a new tab may remain in the background, but its URL update should be recorded. Activate the tab as a separate check for duplicates.
 
-1. Open the respondent `.../viewform` page. Leave **Start in fullscreen** checked, then start in the popup. Verify Monitoring, an `EXAM_STARTED` event, and fullscreen. Try Start again and confirm a second session is refused.
+1. Open the respondent `.../viewform` page. Check **Start in fullscreen**, then start in the popup. Verify Monitoring, an `EXAM_STARTED` event, and fullscreen. Try Start again and confirm a second session is refused.
 2. Open or activate an unrelated website, then `https://chatgpt.com/`. Confirm one readable incident for each, with only hostname stored. The ChatGPT wording must say the page was opened or activated and must not claim it was used.
 3. Open a new tab, switch between it and the Form, move focus out of and back into Chrome, exit and restore fullscreen, then copy and paste dummy text on the Form. Check the matching event types and look for duplicates from a single action.
 4. Close and reopen the popup; confirm the same session and timeline remain. Reload the extension/service worker and check the same data remains.

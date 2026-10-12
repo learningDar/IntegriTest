@@ -43,9 +43,14 @@ function render(state) {
     link.textContent = "Open registered Form";
     pairDetail.append(label, link);
   } else pairDetail.textContent = "Local-only mode. Enter a code to send incidents to the teacher service.";
-  deliveryDetail.textContent = session?.remote
-    ? `Teacher delivery: ${session.remoteEndAck ? "complete" : session.remoteError || "pending"} · ${session.acknowledgedSequence || 0}/${state.incidents.length} events received`
-    : "";
+  if (session?.remote) {
+    const received = session.acknowledgedSequence || 0;
+    const deliveryStatus = session.remoteError || (session.remoteEndAck ? "complete"
+      : !session.remoteStartAck ? "connecting"
+      : received < state.incidents.length ? "syncing"
+      : active ? "up to date" : "finalizing");
+    deliveryDetail.textContent = `Teacher delivery: ${deliveryStatus} · ${received}/${state.incidents.length} events received`;
+  } else deliveryDetail.textContent = "";
   statusBadge.textContent = active ? "Monitoring" : "Inactive";
   statusBadge.classList.toggle("active", active);
   sessionDetail.textContent = session
