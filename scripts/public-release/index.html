@@ -29,12 +29,12 @@
       <li>Extract it. Open <code>chrome://extensions</code>, enable Developer mode, choose <strong>Load unpacked</strong>, and select the <code>extension</code> folder <strong>inside</strong> <code>integritest-v{{VERSION}}</code>. It must contain <code>manifest.json</code>. A missing-manifest error means the outer folder was selected.</li>
       <li>In PowerShell from the extracted folder, run <code>powershell -NoProfile -ExecutionPolicy Bypass -File native-host\install.ps1 -ExtensionId amlfomdhhaklmifkneplnngkbaabibgp</code>. Reload the extension.</li>
       <li>Enter the one-time code from your professor in the extension popup. Open the Form link shown there, then start monitoring.</li>
-      <li>Submit the Form and check that monitoring ended. If it remains active, choose <strong>End Examination</strong>. Keep the local JSON export if delivery fails.</li>
+      <li>Submit the Form and check that monitoring ended. If it remains active after submission, contact your professor. For a technical failure, use <strong>Report a problem and stop early</strong>; the report marks this separately. Keep the local JSON export if delivery fails.</li>
     </ol></section>
     <section class="card"><h2>Professor</h2><ol>
       <li>Create a Google Form and publish its respondent <code>viewform</code> link.</li>
       <li>Run the private local teacher service, register the Form, import a class roster with Student ID and Name columns, and assign it to the exam. Give each student their own code.</li>
-      <li>Review assigned IDs, last contact, gaps, and incident reports in the protected teacher view. Match the roster entry with Google Forms responses separately.</li>
+      <li>Review assigned IDs, last contact, gaps, severity counts, and latest activity in the protected teacher table. Open full incident reports only when needed. Match the roster entry with Google Forms responses separately.</li>
     </ol><p class="small">The public remote teacher link will be added after the HTTPS deployment and separate-device check.</p></section>
   </div>
   <section class="card"><h2>What is recorded?</h2><p>Incident categories, timestamps, supported app categories, and needed website hostnames. The monitor does not collect answers, document contents, full browsing URLs, window titles, or file paths. A gap shows missed contact, not what happened during it.</p></section>

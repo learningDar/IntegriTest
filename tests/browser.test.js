@@ -105,6 +105,10 @@ test('paired extension rejects wrong Form, retries events, and ends only after o
     assert.ok(state.activeSession);
     assert.equal(state.activeSession.acknowledgedSequence,0);
     assert.equal(state.incidents.some(i=>i.type==='AI_SITE_OPENED'),true);
+    const prematureEnd = await h.send({kind:'END_EXAM'});
+    assert.equal(prematureEnd.ok,false);
+    assert.match(prematureEnd.error,/not confirmed submission/i);
+    assert.ok((await h.send({kind:'GET_STATUS'})).result.activeSession);
     await h.send({kind:'CONTENT_EVENT',type:'FORM_SUBMIT_ATTEMPT'},
       {tab:h.tabs.get(1),url:formUrl});
     assert.ok((await h.send({kind:'GET_STATUS'})).result.activeSession);
@@ -131,6 +135,39 @@ test('paired extension rejects wrong Form, retries events, and ends only after o
     const count=state.incidents.length;
     h.listeners.activated({tabId:2}); await h.flush();
     assert.equal((await h.send({kind:'GET_STATUS'})).result.incidents.length,count);
+  });
+
+test('paired early stop is marked separately from a confirmed Form submission',
+  { skip: !serviceUrl || !process.env.SERVICE_TEST_PASSWORD }, async () => {
+    const login = await fetch(serviceUrl + '/api/teacher/login', {
+      method:'POST',headers:{'content-type':'application/json'},
+      body:JSON.stringify({password:process.env.SERVICE_TEST_PASSWORD})
+    });
+    const cookie = login.headers.get('set-cookie').split(';')[0];
+    const examResponse = await fetch(serviceUrl + '/api/teacher/exams', {
+      method:'POST',headers:{cookie,'content-type':'application/json'},
+      body:JSON.stringify({title:'Early stop check',formUrl})
+    });
+    const exam = (await examResponse.json()).exam;
+    const codeResponse = await fetch(serviceUrl + `/api/teacher/exams/${exam.id}/codes`, {
+      method:'POST',headers:{cookie,'content-type':'application/json'},
+      body:JSON.stringify({studentIds:[`STU-${crypto.randomUUID()}`]})
+    });
+    const code = (await codeResponse.json()).codes[0].code;
+    const h = harness();
+    assert.equal((await h.send({kind:'PAIR_STUDENT',code})).ok,true);
+    assert.equal((await h.send({kind:'START_EXAM',tabId:1})).ok,true);
+    assert.equal((await h.send({kind:'END_EXAM'})).ok,false);
+    assert.equal((await h.send({kind:'END_EXAM_EARLY'})).ok,true);
+    const state = (await h.send({kind:'GET_STATUS'})).result;
+    assert.equal(state.activeSession,null);
+    assert.equal(state.lastSession.endReason,'STUDENT_STOPPED_EARLY');
+    assert.equal(state.incidents.at(-1).severity,'MEDIUM');
+    const reportResponse = await fetch(serviceUrl +
+      `/api/teacher/sessions/${state.lastSession.id}/report.json`,{headers:{cookie}});
+    const report = await reportResponse.json();
+    assert.equal(report.session.endReason,'STUDENT_STOPPED_EARLY');
+    assert.equal(report.incidents.length,state.incidents.length);
   });
 
 test('supported Form URLs and browser categories keep only hostnames', () => {

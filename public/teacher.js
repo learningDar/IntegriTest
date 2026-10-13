@@ -34,11 +34,15 @@ function clearPrivateView() {
   $("class-form").reset();
   $("exam-search").value = "";
   $("exam-match-count").textContent = "";
+  $("student-search").value = "";
+  $("session-filter").value = "ALL";
+  $("student-match-count").textContent = "";
   $("save-class").disabled = true;
   for (const id of ["exam-list", "class-list", "selected-class", "roster-preview", "sessions", "timeline", "codes-text", "report-meta", "selected-form", "selected-title"])
     $(id).replaceChildren();
   $("codes-output").hidden = true;
   $("exam-detail").hidden = true;
+  $("monitoring-panel").hidden = true;
   $("report-panel").hidden = true;
   $("empty-selection").hidden = false;
   $("download-report").removeAttribute("href");
@@ -53,7 +57,46 @@ function friendlyStatus(status) {
   return ({ NOT_PAIRED: "Not paired", PAIRED: "Paired", ACTIVE: "Active", ENDED: "Ended" })[status] || status;
 }
 function friendlyEnd(reason) {
-  return ({ MANUAL: "Manual end", FORM_SUBMISSION_OBSERVED: "Form submission observed" })[reason] || "Still open";
+  return ({ MANUAL: "Manual end", FORM_SUBMISSION_OBSERVED: "Form submission observed",
+    STUDENT_STOPPED_EARLY: "Stopped before confirmed submission" })[reason] || "Still open";
+}
+function eventName(session) {
+  const type = session.latest_type;
+  if (!type) return "—";
+  if (type === "AI_SITE_OPENED") return "ChatGPT";
+  if (type === "PDF_OPENED") return "Chrome PDF";
+  if (type === "DESKTOP_APP_ACTIVE") return ({ WORD: "Word", NOTEPAD: "Notepad",
+    PDF_READER: "PDF reader" })[session.latest_app_category] || "Desktop app";
+  if (type === "WEBPAGE_OPENED") {
+    if (/(^|\.)facebook\.com$/i.test(session.latest_hostname || "")) return "Facebook";
+    return session.latest_hostname || "Webpage";
+  }
+  return ({ COPY_ATTEMPT: "Copy", PASTE_ATTEMPT: "Paste", EXAM_STARTED: "Start",
+    EXAM_ENDED: "End", FORM_HIDDEN: "Form", FORM_VISIBLE: "Form",
+    WINDOW_FOCUS_LOST: "Focus", WINDOW_FOCUS_RESTORED: "Focus",
+    FULLSCREEN_EXITED: "Fullscreen", FULLSCREEN_RESTORED: "Fullscreen",
+    MONITORING_INTERRUPTED: "Interruption", TAB_SWITCHED: "Tab" })[type] || type.replaceAll("_", " ");
+}
+function filterSessionRows() {
+  const query = $("student-search").value.trim().toLocaleLowerCase();
+  const status = $("session-filter").value;
+  const rows = [...$("sessions").querySelectorAll("tr[data-student]")];
+  let shown = 0;
+  for (const row of rows) {
+    const match = row.dataset.student.includes(query) && (status === "ALL" || row.dataset.status === status);
+    row.hidden = !match;
+    if (match) shown++;
+  }
+  $("sessions").querySelector("tr[data-empty]")?.remove();
+  if (rows.length && !shown) {
+    const row = element("tr");
+    row.dataset.empty = "true";
+    const cell = element("td", "empty-row", "No students match these filters.");
+    cell.colSpan = 8;
+    row.append(cell);
+    $("sessions").append(row);
+  }
+  $("student-match-count").textContent = `${shown} of ${rows.length} students`;
 }
 
 function renderExamList() {
@@ -115,8 +158,11 @@ function showCodes(codes) {
 async function selectExam(exam) {
   selectedExam = exam;
   selectedReport = null;
+  $("student-search").value = "";
+  $("session-filter").value = "ALL";
   $("empty-selection").hidden = true;
   $("exam-detail").hidden = false;
+  $("monitoring-panel").hidden = false;
   $("report-panel").hidden = true;
   $("codes-output").hidden = true;
   $("codes-text").textContent = "";
@@ -141,31 +187,59 @@ async function loadSessions() {
   $("metric-gap").textContent = sessions.filter(s => s.connection === "GAP").length;
   $("metric-ended").textContent = sessions.filter(s => s.status === "ENDED").length;
   $("sessions").replaceChildren();
-  if (!sessions.length) { $("sessions").textContent = "No students assigned yet. Enter Student IDs above to create join codes."; return; }
+  if (!sessions.length) {
+    const row = element("tr");
+    const cell = element("td", "empty-row", "No students assigned yet. Import a class or enter IDs above to create join codes.");
+    cell.colSpan = 8;
+    row.append(cell);
+    $("sessions").append(row);
+    $("student-match-count").textContent = "0 of 0 students";
+    return;
+  }
   for (const session of sessions) {
-    const card = element("article", "session-card");
-    const top = element("div", "session-top");
-    const badge = element("span", `badge ${session.status === "ACTIVE" ? "badge-active" : ""}`, friendlyStatus(session.status));
-    top.append(element("strong", "", session.student_name ? `${session.student_name} · ${session.student_id}` : session.student_id), badge);
+    const row = element("tr");
+    row.dataset.student = `${session.student_name || ""} ${session.student_id}`.toLocaleLowerCase();
+    row.dataset.status = session.connection === "GAP" ? "GAP" : session.status;
+    const studentCell = element("td");
+    studentCell.append(element("strong", "", session.student_name || session.student_id));
+    if (session.student_name) studentCell.append(element("span", "cell-sub", session.student_id));
+    const codeCell = element("td");
+    codeCell.append(element("span", `code-state ${session.code_status === "USED" ? "code-used" : ""}`,
+      session.code_status === "USED" ? "Used" : "Issued"));
+    const startedCell = element("td", "time-cell", session.started_at
+      ? new Date(session.started_at).toLocaleString() : "Not started");
+    const countsCell = element("td");
+    const counts = element("div", "severity-counts");
+    for (const [level, count] of [["low", session.low_count], ["medium", session.medium_count], ["high", session.high_count]])
+      counts.append(element("span", `severity-count severity-${level}`, `${level[0].toUpperCase()} ${count || 0}`));
+    countsCell.append(counts);
+    const statusCell = element("td");
+    const statusText = session.end_reason === "STUDENT_STOPPED_EARLY" ? "Ended early" : friendlyStatus(session.status);
+    statusCell.append(element("span", `badge ${session.connection === "GAP" || session.end_reason === "STUDENT_STOPPED_EARLY"
+      ? "badge-gap" : session.status === "ACTIVE" ? "badge-active" : ""}`, statusText));
     const contact = session.connection === "GAP" ? "Connection gap"
       : session.connection === "CONNECTED" ? "Connected"
-      : session.status === "PAIRED" ? "Paired, not started"
-      : session.status === "NOT_PAIRED" ? "Waiting for pairing" : "Session ended";
-    const meta = element("div", "session-meta");
-    const contactLabel = element("span", session.connection === "GAP" ? "badge-gap" : "", contact);
-    const last = session.last_contact ? new Date(session.last_contact).toLocaleString() : "No contact yet";
-    meta.append(contactLabel, element("span", "", `Last contact: ${last}`),
-      element("span", "", `${session.event_count || 0} events`));
-    card.append(top, meta);
-    if (session.end_reason) card.append(element("p", "small", friendlyEnd(session.end_reason)));
+      : session.status === "PAIRED" ? "Waiting to start"
+      : session.status === "NOT_PAIRED" ? "Waiting for pairing" : friendlyEnd(session.end_reason);
+    statusCell.append(element("span", "cell-sub", contact));
+    if (session.last_contact) statusCell.append(element("span", "cell-sub", `Last contact ${new Date(session.last_contact).toLocaleTimeString()}`));
+    const activityCell = element("td", "activity-cell");
+    activityCell.append(element("span", "", session.end_reason === "STUDENT_STOPPED_EARLY" && session.latest_type === "EXAM_ENDED"
+      ? "Monitoring stopped before confirmed submission" : session.latest_details || "No event received"));
+    if (session.latest_at) activityCell.append(element("span", "cell-sub", new Date(session.latest_at).toLocaleTimeString()));
+    const eventCell = element("td");
+    eventCell.append(element("span", "event-name", eventName(session)));
+    const reportCell = element("td");
     if (session.id) {
-      const button = element("button", "button-secondary", "Review timeline");
+      const button = element("button", "button-secondary", "View full report");
       button.type = "button";
       button.addEventListener("click", () => showReport(session.id).catch(error => notice(error.message)));
-      card.append(button);
+      reportCell.append(button);
     }
-    $("sessions").append(card);
+    row.append(studentCell, codeCell, startedCell, countsCell, statusCell, activityCell, eventCell, reportCell);
+    $("sessions").append(row);
   }
+  filterSessionRows();
 }
 
 async function showReport(id, scroll = true) {
@@ -216,6 +290,8 @@ $("logout").addEventListener("click", async () => {
   } catch (error) { notice(error.message); }
 });
 $("exam-search").addEventListener("input", renderExamList);
+$("student-search").addEventListener("input", filterSessionRows);
+$("session-filter").addEventListener("change", filterSessionRows);
 $("exam-form").addEventListener("submit", async event => {
   event.preventDefault();
   try {

@@ -39,3 +39,4 @@ button.text-button:hover:not(:disabled) { background: #e8efff; }
 .incident-detail { margin-top: 4px; font-size: 12px; line-height: 1.35; overflow-wrap: anywhere; }
 .incident-host { margin-top: 4px; color: #64748b; font-size: 11px; }
 .empty { color: #64748b; font-size: 12px; padding: 12px 0; }
+.status-panel [hidden] { display: none !important; }

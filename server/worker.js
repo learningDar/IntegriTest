@@ -12,7 +12,7 @@ const TYPES = new Set([
 const CATEGORIES = new Set(["WORD", "NOTEPAD", "PDF_READER"]);
 const SEVERITIES = new Set(["LOW", "MEDIUM", "HIGH"]);
 const SOURCES = new Set(["CHROME", "WINDOWS_HOST"]);
-const END_REASONS = new Set(["MANUAL", "FORM_SUBMISSION_OBSERVED"]);
+const END_REASONS = new Set(["MANUAL", "FORM_SUBMISSION_OBSERVED", "STUDENT_STOPPED_EARLY"]);
 const LABELS = {
   EXAM_STARTED: "Exam session started",
   EXAM_ENDED: "Exam session ended",
@@ -246,11 +246,29 @@ async function teacherApi(request, env, path) {
   }
   const sessionsMatch = path.match(/^\/api\/teacher\/exams\/([a-f0-9-]+)\/sessions$/);
   if (sessionsMatch && request.method === "GET") {
-    const result = await env.DB.prepare(`SELECT s.id,c.student_id,COALESCE(s.student_name,c.student_name) AS student_name,COALESCE(s.status,'NOT_PAIRED') AS status,s.paired_at,s.started_at,
+    const result = await env.DB.prepare(`WITH counts AS (
+      SELECT session_id,COUNT(*) AS event_count,
+        SUM(CASE WHEN severity='LOW' THEN 1 ELSE 0 END) AS low_count,
+        SUM(CASE WHEN severity='MEDIUM' THEN 1 ELSE 0 END) AS medium_count,
+        SUM(CASE WHEN severity='HIGH' THEN 1 ELSE 0 END) AS high_count
+      FROM incidents WHERE session_id IN (SELECT id FROM sessions WHERE exam_id=?) GROUP BY session_id
+    ) SELECT s.id,c.student_id,COALESCE(s.student_name,c.student_name) AS student_name,
+      CASE WHEN c.used_at IS NULL THEN 'ISSUED' ELSE 'USED' END AS code_status,
+      COALESCE(s.status,'NOT_PAIRED') AS status,s.paired_at,s.started_at,
       s.ended_at,s.end_reason,s.last_contact,s.last_sequence,
-      (SELECT COUNT(*) FROM incidents i WHERE i.session_id=s.id) AS event_count
+      COALESCE(counts.event_count,0) AS event_count,
+      COALESCE(counts.low_count,0) AS low_count,
+      COALESCE(counts.medium_count,0) AS medium_count,
+      COALESCE(counts.high_count,0) AS high_count,
+      latest.type AS latest_type,latest.details AS latest_details,
+      latest.hostname AS latest_hostname,latest.app_category AS latest_app_category,
+      latest.timestamp AS latest_at
       FROM join_codes c LEFT JOIN sessions s ON s.exam_id=c.exam_id AND s.student_id=c.student_id
-      WHERE c.exam_id=? ORDER BY c.created_at DESC,c.student_id`).bind(sessionsMatch[1]).all();
+      LEFT JOIN counts ON counts.session_id=s.id
+      LEFT JOIN incidents latest ON latest.session_id=s.id AND latest.sequence=COALESCE(
+        (SELECT MAX(sequence) FROM incidents WHERE session_id=s.id AND type NOT IN ('EXAM_STARTED','EXAM_ENDED')),
+        s.last_sequence)
+      WHERE c.exam_id=? ORDER BY c.created_at DESC,c.student_id`).bind(sessionsMatch[1],sessionsMatch[1]).all();
     const sessions = result.results.map(s => ({
       ...s, connection: s.status === "ACTIVE"
         ? (!s.last_contact || Date.now() - Date.parse(s.last_contact) > GAP_MS ? "GAP" : "CONNECTED")
@@ -377,7 +395,7 @@ export default {
   async fetch(request, env) {
     try {
       const path = route(request);
-      if (path === "/api/health" && request.method === "GET") return response({ status: "ok", version: "0.3.0" });
+      if (path === "/api/health" && request.method === "GET") return response({ status: "ok", version: "0.3.1" });
       if (path.startsWith("/api/teacher/")) return teacherApi(request, env, path);
       if (path.startsWith("/api/student/")) {
         const headers = studentCors(request, env);

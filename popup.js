@@ -1,5 +1,6 @@
 const startButton = document.getElementById("start-button");
 const endButton = document.getElementById("end-button");
+const earlyStopButton = document.getElementById("early-stop-button");
 const exportButton = document.getElementById("export-button");
 const message = document.getElementById("message");
 const statusBadge = document.getElementById("status-badge");
@@ -66,7 +67,13 @@ function render(state) {
   startButton.disabled = active;
   if (active) fullscreenChoice.checked = state.activeSession.fullscreenRequested !== false;
   fullscreenChoice.disabled = active;
-  endButton.disabled = !active;
+  endButton.disabled = !active || Boolean(session?.remote);
+  const pairedActive = active && Boolean(session?.remote);
+  earlyStopButton.hidden = !pairedActive;
+  document.getElementById("end-guidance").hidden = !pairedActive;
+  document.getElementById("end-guidance").textContent = pairedActive
+    ? "Monitoring ends when the registered Form confirms submission. If you cannot finish because of a technical problem, report it to your professor; stopping early is marked separately in the report."
+    : "";
   exportButton.disabled = !session;
 
   const incidents = state.incidents || [];
@@ -165,6 +172,14 @@ endButton.addEventListener("click", async () => {
   message.textContent = "";
   endButton.disabled = true;
   try { render(await request("END_EXAM")); }
+  catch (error) { message.textContent = error.message; await refresh(); }
+});
+
+earlyStopButton.addEventListener("click", async () => {
+  if (!confirm("The Form has not confirmed submission. Stop monitoring and mark this session as ended early for professor review?")) return;
+  message.textContent = "";
+  earlyStopButton.disabled = true;
+  try { render(await request("END_EXAM_EARLY")); }
   catch (error) { message.textContent = error.message; await refresh(); }
 });
 

@@ -225,7 +225,12 @@ async function endExam(reason = "MANUAL") {
   const ended = await exclusive(async () => {
     const state = await readState();
     if (!state.activeSession) throw new Error("No examination is active.");
-    addIncident(state, "EXAM_ENDED", "LOW", "Exam session ended");
+    if (state.activeSession.remote && reason === "MANUAL" && !state.activeSession.submissionConfirmed)
+      throw new Error("The registered Form has not confirmed submission. Monitoring continues. Ask your professor for help if you cannot submit.");
+    if (reason === "STUDENT_STOPPED_EARLY" && !state.activeSession.remote)
+      throw new Error("Use End Examination for a local-only session.");
+    addIncident(state, "EXAM_ENDED", reason === "STUDENT_STOPPED_EARLY" ? "MEDIUM" : "LOW",
+      reason === "STUDENT_STOPPED_EARLY" ? "Monitoring stopped before Form submission was observed" : "Exam session ended");
     state.activeSession.endedAt = new Date().toISOString();
     state.activeSession.endReason = reason;
     state.lastSession = state.activeSession;
@@ -428,6 +433,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         case "GET_STATUS": result = await status(); break;
         case "START_EXAM": result = await startExam(message.tabId, message.fullscreen === true); break;
         case "END_EXAM": result = await endExam(); break;
+        case "END_EXAM_EARLY": result = await endExam("STUDENT_STOPPED_EARLY"); break;
         case "PAIR_STUDENT": result = await pairStudent(message.code); break;
         case "SYNC_NOW": await syncRemote(); result = await status(); break;
         case "CONTENT_EVENT": await handleContent(message.type, sender); result = { ok: true }; break;

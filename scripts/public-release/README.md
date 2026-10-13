@@ -51,7 +51,7 @@ Google Chrome Manifest V3, JavaScript, Windows PowerShell, a C# native messaging
 
 ## USER GUIDE
 
-On the registered Form, open the extension popup and start monitoring. It warns about other tabs in the same Chrome window but does not block Start. Submit the Form, then check that monitoring ended; use **End Examination** if automatic ending does not occur. Export local JSON if teacher delivery fails. The teacher downloads the service-generated report from the protected teacher view when the service is available.
+On the registered Form, open the extension popup and start monitoring. It warns about other tabs in the same Chrome window but does not block Start. Submit the Form, then check that monitoring ended; contact the professor if automatic ending does not occur; **Report a problem and stop early** is a marked fallback for technical failure. Export local JSON if teacher delivery fails. The teacher downloads the service-generated report from the protected teacher view when the service is available.
 
 ## QUALITY ASSURANCE & TESTING
 

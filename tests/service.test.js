@@ -102,6 +102,8 @@ test('teacher access, one-use codes, delivery retries, ending, and private servi
     const assigned = beforePair.data.sessions.find(s => s.student_id === 'Student 1');
     assert.equal(assigned.status,'NOT_PAIRED');
     assert.equal(assigned.id,null);
+    assert.equal(assigned.code_status,'ISSUED');
+    assert.equal(assigned.event_count,0);
     assert.equal((await call('/api/student/pair',{method:'POST',value:{code:'0000000000000000'}})).status,403);
     const pair = await call('/api/student/pair',{method:'POST',value:{code},origin:extensionOrigin});
     assert.equal(pair.status,201,JSON.stringify(pair.data));
@@ -133,6 +135,13 @@ test('teacher access, one-use codes, delivery retries, ending, and private servi
     const ended = sessions.data.sessions.find(s => s.student_id === 'Student 1');
     assert.equal(ended.event_count,4);
     assert.equal(ended.end_reason,'MANUAL');
+    assert.equal(ended.code_status,'USED');
+    assert.ok(ended.started_at);
+    assert.equal(ended.low_count,2);
+    assert.equal(ended.medium_count,1);
+    assert.equal(ended.high_count,1);
+    assert.equal(ended.latest_type,'DESKTOP_APP_ACTIVE');
+    assert.equal(ended.latest_app_category,'WORD');
     const report = await call(`/api/teacher/sessions/${pair.data.sessionId}/report.json`,{cookie});
     assert.equal(report.status,200);
     assert.equal(report.data.incidents.length,4);
@@ -161,7 +170,7 @@ test('public connection check reports service readiness', {skip: !base}, async (
   const result = await call('/api/health');
   assert.equal(result.status,200);
   assert.equal(result.data.status,'ok');
-  assert.equal(result.data.version,'0.3.0');
+  assert.equal(result.data.version,'0.3.1');
 });
 
 test('teacher accepts signed-in Google Forms links and stores a canonical respondent URL',
