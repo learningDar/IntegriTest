@@ -112,6 +112,7 @@ function renderExamList() {
   for (const exam of exams) {
     const button = element("button", "exam-button");
     button.type = "button";
+    button.title = exam.title;
     button.dataset.examId = exam.id;
     button.append(element("strong", "", exam.title), element("span", "", new Date(exam.created_at).toLocaleDateString()));
     button.setAttribute("aria-current", String(selectedExam?.id === exam.id));
@@ -133,7 +134,9 @@ async function loadClasses() {
   if (!classes.length) $("class-list").textContent = "No classes saved yet.";
   for (const entry of classes) {
     const row = element("div", "class-row");
-    row.append(element("span", "", `${entry.name} · ${entry.student_count} students`));
+    const label = element("span", "", `${entry.name} · ${entry.student_count} students`);
+    label.title = label.textContent;
+    row.append(label);
     const remove = element("button", "button-secondary", "Delete");
     remove.type = "button";
     remove.addEventListener("click", async () => {

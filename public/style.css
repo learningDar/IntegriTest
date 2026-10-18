@@ -70,10 +70,25 @@ h2{font-size:1.3rem}h3{font-size:1.08rem}
 .workspace-pair-exams{grid-template-columns:repeat(2,minmax(0,1fr))}
 .workspace-pair-assignments{grid-template-columns:minmax(0,1.7fr) minmax(300px,1fr)}
 .workspace-pair>.workflow-step{display:flex;flex-direction:column;min-width:0}
-.workflow-step .exam-list{display:flex;flex-direction:column;flex:1;min-height:0;max-height:230px;overflow-y:auto}
+.workspace-pair .card{padding:1.2rem 1.35rem}
+.workspace-pair .section-heading{margin-bottom:.9rem}
+.workspace-pair .form-stack{gap:.45rem}
+.workspace-pair .form-stack label{margin-top:0}
+.workspace-pair .form-stack button{margin-top:.25rem}
+.workflow-step .exam-list{display:flex;flex-direction:column;min-height:0;overflow-y:auto}
 .workflow-step .exam-list>.exam-button{flex:none}
-.workspace-pair-exams #exam-form,.workspace-pair-assignments #assign-class-form{flex:1}
-.workspace-pair-exams #exam-form button,.workspace-pair-assignments #assign-class-form button{align-self:end}
+.workspace-pair-classes #class-list{max-height:218px;gap:.32rem}
+.workspace-pair-classes #class-form{gap:.35rem}
+.workspace-pair-classes #class-form input{padding:.5rem .7rem}
+.workspace-pair-classes .class-row{min-height:36px;padding:.22rem .5rem;font-size:.84rem}
+.workspace-pair-classes .class-row span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.workspace-pair-classes .class-row button{min-height:29px;padding:.2rem .45rem;font-size:.78rem}
+.workspace-pair-exams #exam-list{max-height:128px;gap:.35rem}
+.workspace-pair-exams .exam-button{display:flex;align-items:center;justify-content:space-between;gap:.6rem;min-height:39px;padding:.4rem .65rem}
+.workspace-pair-exams .exam-button strong{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.workspace-pair-exams .exam-button span{flex:none;margin-top:0;white-space:nowrap}
+.workspace-pair-assignments #exam-detail h3{margin-bottom:.35rem}
+.workspace-pair-assignments #exam-detail>p{margin-bottom:.6rem}
 .step-number-soft{font-size:.65rem}
 .field-help{margin:.15rem 0 0;font-size:.82rem}
 .field-help strong{color:var(--text)}
