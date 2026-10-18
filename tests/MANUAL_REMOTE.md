@@ -4,7 +4,7 @@ Use a published practice Form and a disposable class roster with **Student 1** a
 
 ## Local setup
 
-1. On `feat/phase3-teacher-monitoring`, run `npm.cmd install`, `npm.cmd run build:roster`, and `npm.cmd run db:local`.
+1. On `main`, run `npm.cmd ci`, `npm.cmd run build:roster`, and `npm.cmd run db:local`.
 2. Create ignored `.dev.vars` with a strong `TEACHER_PASSWORD`, a random `SESSION_SECRET`, and `ALLOWED_EXTENSION_IDS=amlfomdhhaklmifkneplnngkbaabibgp`. Run `npm.cmd run dev -- --ip 127.0.0.1 --port 8787`.
 3. Run `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/package-demo.ps1`. Check the ZIP SHA-256 against `public/downloads/integritest-v0.3.2.sha256` and the public page at `http://127.0.0.1:8787/`. Click **Check connection** on that page and verify it reports the service version.
 4. In a clean Chrome profile, load `dist/integritest-v0.3.2/extension` as unpacked. Select the inner `extension` folder containing `manifest.json`, not the outer `integritest-v0.3.2` folder. Confirm its ID is `amlfomdhhaklmifkneplnngkbaabibgp`. Register the native host with `powershell -NoProfile -ExecutionPolicy Bypass -File dist/integritest-v0.3.2/native-host/install.ps1 -ExtensionId amlfomdhhaklmifkneplnngkbaabibgp`, then reload the extension.
