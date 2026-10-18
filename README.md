@@ -6,7 +6,7 @@
 
 <p align="center"><a href="#installation--setup">Setup</a> · <a href="#user-guide">Professor guide</a> · <a href="#system-architecture--components">Architecture</a> · <a href="#test-results">Test results</a> · <a href="#limitations">Limitations</a></p>
 
-> **Status · October 18, 2026:** The v0.1.2 local Chrome and Windows monitor on `main` passed live checks. Phase 3 remains on `feat/phase3-teacher-monitoring`. The v0.3.2 build passed 23 local automated checks. Its professor layout, monitoring table, and report modal passed a guided desktop and narrow-width visual check; the popup theme still awaits a live visual check. Earlier Phase 3 live checks demonstrated delivery, supported browser and Windows categories, confirmed-submission ending, outage recovery, and marked early stop. Live connection-gap display during an actual outage, HTTPS deployment, and separate-device monitoring remain unverified. Incidents are observations, not cheating verdicts.
+> **Status · October 18, 2026:** The v0.1.2 local Chrome and Windows monitor on `main` passed live checks. Phase 3 remains on `feat/phase3-teacher-monitoring`. The current local Worker passed 24 automated checks. Its professor layout, monitoring table, and report modal passed guided desktop and narrow-width checks; the student confirmed the v0.3.2 popup theme switch persists. Earlier Phase 3 live checks demonstrated delivery, supported browser and Windows categories, confirmed-submission ending, outage recovery, and marked early stop. Live connection-gap display during an actual outage, HTTPS deployment, and separate-device monitoring remain unverified. Incidents are observations, not cheating verdicts.
 
 ## PROJECT OVERVIEW
 
@@ -27,7 +27,7 @@ Google Forms does not give a professor a record of tab changes or supported desk
 
 | Component | Behavior | Evidence |
 | --- | --- | --- |
-| Chrome extension | Start/end, tab and focus changes, fullscreen, copy/paste, local timeline and JSON, webpage/ChatGPT/PDF categories; paired-session End guard, marked early stop, and popup dark/light toggle | v0.1.2 and v0.3.0 live checks passed; v0.3.1 End guard and early stop passed guided checks; v0.3.2 theme awaits live UI check |
+| Chrome extension | Start/end, tab and focus changes, fullscreen, copy/paste, local timeline and JSON, webpage/ChatGPT/PDF categories; paired-session End guard, marked early stop, and popup dark/light toggle | v0.1.2 and v0.3.0 live checks passed; v0.3.1 End guard and early stop passed guided checks; v0.3.2 theme persistence was confirmed by the student |
 | Windows companion | Foreground Word, Notepad, and verified Adobe Acrobat categories; disconnect signal | v0.1.2 live gate passed on the development machine |
 | Professor service | Protected Form records, `.xlsx` classes, one-use codes, 10-second dashboard refresh, student status and latest activity table, report modal on request, JSON, 30-day cleanup | v0.3.1 API and live table checks passed; v0.3.2 layout, table, and modal passed guided desktop and narrow-width checks; full local and HTTPS gates pending |
 
@@ -50,7 +50,7 @@ The extension service worker validates session boundaries and retries delivery. 
 ## SYSTEM WORKFLOW
 
 1. The professor publishes a Google Form and registers its respondent `viewform` link in the teacher view.
-2. The professor imports a class `.xlsx` whose first sheet has **Student ID** and **Name** headers. The browser previews and validates it, then sends only confirmed names and IDs. Manual ID-only assignments remain available.
+2. The professor imports a class `.xlsx` whose first sheet has **Student ID** and **Name** headers. The browser previews and validates it, then sends only confirmed names and IDs. For a late arrival, the professor can enter a name with an optional Student ID; a name-only entry receives an internal ID. Existing ID-only assignments remain compatible.
 3. Assigning a class to an exam generates fresh one-use codes, shown once for copying or a plain-text download. The professor shares each code privately.
 4. A student pairs the extension, opens the registered Form from the popup, and starts. The service receives incidents and heartbeats; the dashboard refreshes every 10 seconds. A connection gap means contact was missed.
 5. Observed submission confirmation ends a paired session. A technical issue can be marked as an early stop; local-only sessions retain manual End. The professor downloads the service JSON and matches the roster entry with the separate Google Forms response manually.
@@ -89,7 +89,7 @@ The October 19 local demonstration needs no hosting payment or Chrome Web Store 
 
 **Student:** Obtain a one-time code from the professor. Pair in the extension popup, open the registered Form link, choose whether to start in fullscreen, and select **Start Examination**. The popup has a saved dark/light choice and lists the newest local incident first. After submitting, check the status. If it stays Monitoring after confirmed submission, contact the professor. For a technical failure, **Report a problem and stop early** records a distinct early end. Local JSON export is a fallback if delivery fails.
 
-**Professor:** Sign in at the [workspace](public/teacher.html). Follow one setup card per step: import a class workbook, inspect the preview and row errors, register a published Form, select it, and assign the class. Copy or download the codes when shown. The full-width table refreshes every 10 seconds and shows each student's code state, start time, Low/Medium/High counts, connection status, latest activity, and event name. **View full report** opens a modal with newest incidents first and a JSON download; that exported JSON remains in ascending sequence. The raw code is shown only when issued. Match Form responses separately.
+**Professor:** Sign in at the [workspace](public/teacher.html). The setup pairs import/saved classes, register/choose exam, and selected exam/late additions. Paired cards match heights; saved lists scroll within their cards. Import a class workbook and inspect preview errors, register and select a published Form, then assign the class. For a late student, enter `Name` or `Name | Student ID`; the service supplies a distinct internal ID when omitted. Copy or download codes when shown. The full-width table refreshes every 10 seconds and shows each student's code state, start time, Low/Medium/High counts, connection status, latest activity, and event name. **View full report** opens a modal with newest incidents first and a JSON download; that exported JSON remains in ascending sequence. The raw code is shown only when issued. Match Form responses separately.
 
 The [public setup page](public/index.html) explains installation and what is recorded. The published [10-question Systems Integration and Architecture practice Form](https://docs.google.com/forms/d/e/1FAIpQLSdOyiXOUU2YWqp2RFh6SR_-dPf8ZmixAjrT7bZ4EE0TnS7oVQ/viewform) can be used for activity demonstrations. Its answers are not collected by the extension.
 
@@ -114,6 +114,7 @@ Run `npm.cmd test`. With the local Worker running, set `SERVICE_TEST_URL=http://
 | v0.3.1 paired-session early stop | Student 5 paired and started with the Windows monitor connected. Normal End was disabled and the marked problem-stop control was available. The student used that control before submitting. The professor table showed **Ended early** and **Stopped before confirmed submission**. D1 stored `STUDENT_STOPPED_EARLY` with 16 incidents, 16 unique IDs, and sequences 1–16. Opening `www.iana.org` after End left the report at 16 incidents. |
 | v0.3.2 local automated check | **23/23 passed** with the local Worker on October 18. The end-acknowledgement test now waits within a bounded interval instead of assuming a fixed 250 ms response. The package contains manifest version 0.3.2 and its ZIP matches the published SHA-256. |
 | v0.3.2 guided professor UI check | On October 18, the setup showed one auto-height card per step at desktop and 390 px width. The full-width monitoring table showed code state, counts, status, latest activity, and event label; search and status filter changed visible rows correctly. Student 3's 41-event report opened in a modal with newest events first. Close and Escape returned keyboard focus to the report button. Dark and light views were inspected. A duplicate modal scrollbar and focus loss during table refresh were fixed during this check. |
+| Phase 3 grouped setup and late additions | On October 18, the local Worker passed **24/24** automated checks, including name-only and explicit-ID late additions, duplicate rejection, one-use pairing, and report privacy. Two dummy late students were created through the local professor UI: one received an internal ID and one kept `STU009`. At desktop width, each setup pair measured equal card heights; 138 saved exams scrolled within a 230 px list with no overlapping rows. At 390 px width, cards stacked without horizontal overflow. |
 | Separate-device HTTPS gate | **Pending.** No hosted service or remote device test has been run. |
 
 <details><summary>Earlier test history</summary>
@@ -128,7 +129,7 @@ The extension cannot observe another browser or device. A foreground app categor
 
 ## CONCLUSION
 
-The local monitor is demonstrable. Phase 3's roster, delivery, Form submission, outage recovery, professor table, report modal, and paired-session end control have the local evidence listed above. The v0.3.2 popup visual check, live gap display during an outage, and deployed separate-device flow remain before Phase 3 or remote monitoring can be presented as complete.
+The local monitor is demonstrable. Phase 3's roster, delivery, Form submission, outage recovery, professor table, report modal, and paired-session end control have the local evidence listed above. The v0.3.2 popup theme was confirmed by the student; live gap display during an outage and the deployed separate-device flow remain before Phase 3 or remote monitoring can be presented as complete.
 
 ## APPENDICES
 

@@ -61,6 +61,41 @@ test('class roster persists across exams and snapshots names after deletion',
     assert.ok(!JSON.stringify(report.data.incidents).includes('Student 1'));
   });
 
+test('late additions accept a name with an optional student ID',
+  { skip: !base || !password }, async () => {
+    const login = await call('/api/teacher/login',{method:'POST',value:{password}});
+    const cookie = login.headers.get('set-cookie').split(';')[0];
+    const created = await call('/api/teacher/exams',{method:'POST',cookie,value:{
+      title:'Late addition check',
+      formUrl:`https://docs.google.com/forms/d/e/${crypto.randomUUID().replaceAll('-','')}/viewform`
+    }});
+    assert.equal(created.status,201);
+    const path = `/api/teacher/exams/${created.data.exam.id}/codes`;
+    const submit = students => call(path,{method:'POST',cookie,value:{students}});
+    assert.equal((await submit([{name:'Student 6',studentId:'bad/id'}])).status,400);
+    assert.equal((await submit([{name:'Student 6'},{name:'Student 6'}])).status,409);
+    const issued = await submit([{name:'Student 6'},{name:'Student 7',studentId:'STU007'}]);
+    assert.equal(issued.status,201,JSON.stringify(issued.data));
+    const [nameOnly,withId] = issued.data.codes;
+    assert.match(nameOnly.studentId,/^LATE-[A-F0-9]{12}$/);
+    assert.equal(nameOnly.generatedId,true);
+    assert.equal(nameOnly.name,'Student 6');
+    assert.equal(withId.studentId,'STU007');
+    assert.equal(withId.generatedId,false);
+    assert.equal((await submit([{name:'Student 6'}])).status,409);
+    assert.equal((await submit([{name:'Another Student',studentId:'stu007'}])).status,409);
+    const beforePair = await call(`/api/teacher/exams/${created.data.exam.id}/sessions`,{cookie});
+    assert.equal(beforePair.data.sessions.find(s => s.student_id === nameOnly.studentId).student_name,'Student 6');
+    const paired = await call('/api/student/pair',{method:'POST',value:{code:nameOnly.code},origin:extensionOrigin});
+    assert.equal(paired.status,201,JSON.stringify(paired.data));
+    assert.equal(paired.data.studentName,'Student 6');
+    assert.equal((await call('/api/student/pair',{method:'POST',value:{code:nameOnly.code}})).status,403);
+    const report = await call(`/api/teacher/sessions/${paired.data.sessionId}/report.json`,{cookie});
+    assert.equal(report.data.studentName,'Student 6');
+    assert.equal(report.data.studentId,nameOnly.studentId);
+    assert.deepEqual(report.data.incidents,[]);
+  });
+
 async function call(path, { method = 'GET', value, cookie, credential, origin } = {}) {
   const headers = {};
   if (value !== undefined) headers['content-type'] = 'application/json';

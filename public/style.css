@@ -63,14 +63,24 @@ h2{font-size:1.3rem}h3{font-size:1.08rem}
 .severity-low{color:var(--muted)}.severity-medium{color:var(--warning)}.severity-high{color:#ee8089;border-color:#9b4b57}
 .code-state,.event-name{display:inline-block;padding:.18rem .45rem;border-radius:6px;border:1px solid var(--line);background:var(--soft);white-space:nowrap;font-size:.75rem;font-weight:700}
 .code-used{color:var(--signal)}.event-name{color:var(--text);max-width:165px;overflow:hidden;text-overflow:ellipsis}
-/* One setup step per row; the monitoring table keeps the full page width. */
+/* Related setup steps share equal-height rows; long lists scroll inside their cards. */
 .workspace-flow{display:grid;gap:1rem;margin:1.2rem auto 0}
-.workflow-step{width:min(100%,820px);margin-inline:auto;height:auto}
-.workflow-step .form-stack{max-width:680px}
-.workflow-step .exam-list{max-height:230px}
+.workspace-pair{display:grid;gap:1rem;align-items:stretch}
+.workspace-pair-classes{grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr)}
+.workspace-pair-exams{grid-template-columns:repeat(2,minmax(0,1fr))}
+.workspace-pair-assignments{grid-template-columns:minmax(0,1.7fr) minmax(300px,1fr)}
+.workspace-pair>.workflow-step{display:flex;flex-direction:column;min-width:0}
+.workflow-step .exam-list{display:flex;flex-direction:column;flex:1;min-height:0;max-height:230px;overflow-y:auto}
+.workflow-step .exam-list>.exam-button{flex:none}
+.workspace-pair-exams #exam-form,.workspace-pair-assignments #assign-class-form{flex:1}
+.workspace-pair-exams #exam-form button,.workspace-pair-assignments #assign-class-form button{align-self:end}
+.step-number-soft{font-size:.65rem}
+.field-help{margin:.15rem 0 0;font-size:.82rem}
+.field-help strong{color:var(--text)}
 .workflow-step.code-output{margin-top:0}
 .workflow-step.code-output pre{white-space:pre-wrap;overflow-wrap:anywhere}
 .monitoring-panel{margin-top:1.4rem}
+@media(max-width:960px){.workspace-pair{grid-template-columns:1fr}.workspace-pair>.workflow-step{height:auto}}
 
 /* The report stays out of the page layout until a student is selected. */
 .report-modal{width:min(900px,calc(100vw - 2rem));max-width:none;max-height:min(88vh,850px);padding:0;overflow:hidden;border:1px solid var(--line);border-radius:16px;background:var(--surface);color:var(--text);box-shadow:0 24px 80px rgb(0 0 0 / 48%)}

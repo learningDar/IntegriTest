@@ -44,6 +44,7 @@ function clearPrivateView() {
   for (const id of ["exam-list", "class-list", "selected-class", "roster-preview", "sessions", "timeline", "codes-text", "report-meta", "selected-form", "selected-title"])
     $(id).replaceChildren();
   $("codes-output").hidden = true;
+  $("assignment-row").hidden = true;
   $("exam-detail").hidden = true;
   $("late-additions").hidden = true;
   $("monitoring-panel").hidden = true;
@@ -152,10 +153,21 @@ async function loadClasses() {
   return classes;
 }
 function showCodes(codes) {
-  $("codes-text").textContent = codes.map(({ name, studentId, code }) =>
-    `${name ? name + " · " : ""}${studentId} · ${code}`).join("\n");
+  $("codes-text").textContent = codes.map(({ name, studentId, code, generatedId }) =>
+    `${name ? name + " · " : ""}${studentId}${generatedId ? " (internal ID)" : ""} · ${code}`).join("\n");
   $("codes-output").hidden = false;
   $("codes-heading").focus();
+}
+
+function parseManualStudents(value) {
+  const lines = value.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+  if (!lines.length || lines.length > 100) throw new Error("Enter 1 to 100 students, one per line.");
+  return lines.map((line, index) => {
+    const parts = line.split("|").map(part => part.trim());
+    if (parts.length > 2 || !parts[0] || (parts.length === 2 && !parts[1]))
+      throw new Error(`Line ${index + 1}: use Name or Name | Student ID.`);
+    return { name: parts[0], ...(parts.length === 2 ? { studentId: parts[1] } : {}) };
+  });
 }
 
 async function selectExam(exam) {
@@ -165,6 +177,7 @@ async function selectExam(exam) {
   selectedReport = null;
   $("student-search").value = "";
   $("session-filter").value = "ALL";
+  $("assignment-row").hidden = false;
   $("exam-detail").hidden = false;
   $("late-additions").hidden = false;
   $("monitoring-panel").hidden = false;
@@ -194,7 +207,7 @@ async function loadSessions() {
   $("sessions").replaceChildren();
   if (!sessions.length) {
     const row = element("tr");
-    const cell = element("td", "empty-row", "No students assigned yet. Import a class or enter IDs above to create join codes.");
+    const cell = element("td", "empty-row", "No students assigned yet. Assign a class or add a student above to create join codes.");
     cell.colSpan = 8;
     row.append(cell);
     $("sessions").append(row);
@@ -337,10 +350,10 @@ $("exam-form").addEventListener("submit", async event => {
 $("codes-form").addEventListener("submit", async event => {
   event.preventDefault();
   try {
-    const studentIds = $("student-ids").value.split(/\r?\n/).map(value => value.trim()).filter(Boolean);
-    const { codes } = await api(`/api/teacher/exams/${selectedExam.id}/codes`, jsonPost({ studentIds }));
+    const students = parseManualStudents($("manual-students").value);
+    const { codes } = await api(`/api/teacher/exams/${selectedExam.id}/codes`, jsonPost({ students }));
     showCodes(codes);
-    $("student-ids").value = "";
+    $("manual-students").value = "";
     await loadSessions();
     notice("Codes created. Share each code privately.");
   } catch (error) { notice(error.message); }

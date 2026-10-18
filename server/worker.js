@@ -115,7 +115,8 @@ async function issueCodes(env, examId, students) {
     const code = token(8);
     statements.push(env.DB.prepare("INSERT INTO join_codes (code_hash,exam_id,student_id,student_name,created_at) VALUES (?,?,?,?,?)")
       .bind(await digest(code), examId, student.studentId, student.name ?? null, now));
-    codes.push({ studentId: student.studentId, name: student.name ?? null, code });
+    codes.push({ studentId: student.studentId, name: student.name ?? null,
+      generatedId: Boolean(student.generatedId), code });
   }
   await env.DB.batch(statements);
   return codes;
@@ -222,12 +223,46 @@ async function teacherApi(request, env, path) {
     const exam = await env.DB.prepare("SELECT id, status FROM exams WHERE id = ?").bind(codeMatch[1]).first();
     if (!exam || exam.status !== "OPEN") return error(404, "Open exam not found.");
     const input = await body(request);
-    const ids = input.studentIds;
-    if (!Array.isArray(ids) || !ids.length || ids.length > 100 ||
-        ids.some(id => !validStudentId(id)) ||
-        new Set(ids).size !== ids.length) return error(400, "Enter up to 100 unique student IDs.");
+    let students;
+    if (Array.isArray(input.students)) {
+      if (!input.students.length || input.students.length > 100 || input.students.some(student =>
+        !student || !validStudentName(student.name) ||
+        (student.studentId != null && !validStudentId(student.studentId))))
+        return error(400, "Enter 1 to 100 students with names and optional valid IDs.");
+      const existing = await env.DB.prepare("SELECT student_id,student_name FROM join_codes WHERE exam_id=?")
+        .bind(exam.id).all();
+      const usedIds = new Set(existing.results.map(row => row.student_id.toLowerCase()));
+      const usedNames = new Set(existing.results.filter(row => row.student_name)
+        .map(row => row.student_name.toLocaleLowerCase()));
+      const requestedNames = input.students.map(student => student.name.toLocaleLowerCase());
+      const nameOnly = new Set();
+      students = [];
+      for (const student of input.students) {
+        const generatedId = student.studentId == null;
+        const nameKey = student.name.toLocaleLowerCase();
+        if (generatedId && (usedNames.has(nameKey) || nameOnly.has(nameKey) ||
+            requestedNames.filter(name => name === nameKey).length > 1))
+          return error(409, "That name already has a code for this exam. Add a Student ID to distinguish the student.");
+        let studentId = student.studentId;
+        if (generatedId) {
+          do { studentId = `LATE-${token(6).toUpperCase()}`; }
+          while (usedIds.has(studentId.toLowerCase()));
+          nameOnly.add(nameKey);
+        }
+        if (usedIds.has(studentId.toLowerCase()))
+          return error(409, "A student ID already has a code for this exam.");
+        usedIds.add(studentId.toLowerCase());
+        students.push({ studentId, name: student.name, generatedId });
+      }
+    } else {
+      const ids = input.studentIds;
+      if (!Array.isArray(ids) || !ids.length || ids.length > 100 ||
+          ids.some(id => !validStudentId(id)) ||
+          new Set(ids).size !== ids.length) return error(400, "Enter up to 100 unique student IDs.");
+      students = ids.map(studentId => ({ studentId }));
+    }
     let codes;
-    try { codes = await issueCodes(env, exam.id, ids.map(studentId => ({ studentId }))); }
+    try { codes = await issueCodes(env, exam.id, students); }
     catch { return error(409, "A student ID already has a code for this exam."); }
     return response({ codes }, 201);
   }
