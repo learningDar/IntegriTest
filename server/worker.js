@@ -395,7 +395,7 @@ export default {
   async fetch(request, env) {
     try {
       const path = route(request);
-      if (path === "/api/health" && request.method === "GET") return response({ status: "ok", version: "0.3.1" });
+      if (path === "/api/health" && request.method === "GET") return response({ status: "ok", version: "0.3.2" });
       if (path.startsWith("/api/teacher/")) return teacherApi(request, env, path);
       if (path.startsWith("/api/student/")) {
         const headers = studentCors(request, env);

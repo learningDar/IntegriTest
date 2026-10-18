@@ -1,6 +1,7 @@
 const $ = id => document.getElementById(id);
 let selectedExam = null;
 let selectedReport = null;
+let reportFocusId = null;
 let rosterPreview = null;
 let refreshBusy = false;
 let allExams = [];
@@ -27,6 +28,8 @@ function displayAuth(signedIn) {
   $("teacher-panel").hidden = !signedIn;
 }
 function clearPrivateView() {
+  reportFocusId = null;
+  if ($("report-modal").open) $("report-modal").close();
   selectedExam = null;
   selectedReport = null;
   rosterPreview = null;
@@ -42,9 +45,8 @@ function clearPrivateView() {
     $(id).replaceChildren();
   $("codes-output").hidden = true;
   $("exam-detail").hidden = true;
+  $("late-additions").hidden = true;
   $("monitoring-panel").hidden = true;
-  $("report-panel").hidden = true;
-  $("empty-selection").hidden = false;
   $("download-report").removeAttribute("href");
 }
 function element(tag, className, value) {
@@ -153,17 +155,19 @@ function showCodes(codes) {
   $("codes-text").textContent = codes.map(({ name, studentId, code }) =>
     `${name ? name + " · " : ""}${studentId} · ${code}`).join("\n");
   $("codes-output").hidden = false;
+  $("codes-heading").focus();
 }
 
 async function selectExam(exam) {
+  reportFocusId = null;
+  if ($("report-modal").open) $("report-modal").close();
   selectedExam = exam;
   selectedReport = null;
   $("student-search").value = "";
   $("session-filter").value = "ALL";
-  $("empty-selection").hidden = true;
   $("exam-detail").hidden = false;
+  $("late-additions").hidden = false;
   $("monitoring-panel").hidden = false;
-  $("report-panel").hidden = true;
   $("codes-output").hidden = true;
   $("codes-text").textContent = "";
   $("selected-title").textContent = exam.title;
@@ -233,6 +237,7 @@ async function loadSessions() {
     if (session.id) {
       const button = element("button", "button-secondary", "View full report");
       button.type = "button";
+      button.dataset.reportId = session.id;
       button.addEventListener("click", () => showReport(session.id).catch(error => notice(error.message)));
       reportCell.append(button);
     }
@@ -242,14 +247,15 @@ async function loadSessions() {
   filterSessionRows();
 }
 
-async function showReport(id, scroll = true) {
+async function showReport(id) {
   const report = await api(`/api/teacher/sessions/${id}/report.json`);
+  if (!selectedExam || report.exam.id !== selectedExam.id) return;
   selectedReport = report;
-  $("report-panel").hidden = false;
+  reportFocusId = id;
   $("report-meta").textContent = `${report.studentName ? report.studentName + " · " : ""}${report.studentId} · ${friendlyStatus(report.session.status)} · ${report.incidents.length} events · ${friendlyEnd(report.session.endReason)}`;
   $("timeline").replaceChildren();
   if (!report.incidents.length) $("timeline").append(element("li", "timeline-item", "No incidents received yet."));
-  for (const incident of report.incidents) {
+  for (const incident of [...report.incidents].sort((a, b) => b.sequence - a.sequence)) {
     const item = element("li", "timeline-item");
     const time = element("time", "", new Date(incident.timestamp).toLocaleString());
     time.dateTime = incident.timestamp;
@@ -258,8 +264,27 @@ async function showReport(id, scroll = true) {
     if (context) item.append(element("p", "", context));
     $("timeline").append(item);
   }
-  if (scroll) $("report-panel").scrollIntoView({ behavior: "smooth" });
+  if (!$("report-modal").open) {
+    $("report-modal").showModal();
+    $("close-report").focus();
+  }
+  $("report-modal-body")?.scrollTo(0, 0);
 }
+
+$("close-report").addEventListener("click", () => $("report-modal").close());
+$("refresh-report").addEventListener("click", () => {
+  if (reportFocusId) showReport(reportFocusId).catch(error => notice(error.message));
+});
+$("report-modal").addEventListener("close", () => {
+  const id = reportFocusId;
+  reportFocusId = null;
+  selectedReport = null;
+  if (id && !$("teacher-panel").hidden) {
+    const button = [...document.querySelectorAll("button[data-report-id]")]
+      .find(item => item.dataset.reportId === id && !item.closest("[hidden]"));
+    (button || $("student-search")).focus();
+  }
+});
 
 $("download-report").addEventListener("click", event => {
   if (!selectedReport) { event.preventDefault(); return; }
@@ -373,7 +398,6 @@ setInterval(async () => {
   refreshBusy = true;
   try {
     await loadSessions();
-    if (selectedReport) await showReport(selectedReport.session.id, false);
   } catch (error) { notice(error.message); }
   finally { refreshBusy = false; }
 }, 10_000);

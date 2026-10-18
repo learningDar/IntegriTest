@@ -14,8 +14,26 @@ const joinCode = document.getElementById("join-code");
 const pairDetail = document.getElementById("pair-detail");
 const deliveryDetail = document.getElementById("delivery-detail");
 const tabWarning = document.getElementById("tab-warning");
+const themeButton = document.getElementById("theme-toggle");
 document.getElementById("build-version").textContent = `· v${chrome.runtime.getManifest().version}`;
 let currentState = null;
+
+function applyTheme(theme) {
+  document.documentElement.dataset.theme = theme;
+  themeButton.textContent = theme === "dark" ? "Light mode" : "Dark mode";
+  themeButton.setAttribute("aria-label", `Switch to ${theme === "dark" ? "light" : "dark"} mode`);
+  themeButton.setAttribute("aria-pressed", String(theme === "dark"));
+}
+chrome.storage.local.get("popupTheme").then(({ popupTheme }) => {
+  applyTheme(popupTheme === "light" || popupTheme === "dark" ? popupTheme
+    : matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+}).catch(() => applyTheme("light"));
+themeButton.addEventListener("click", async () => {
+  const theme = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+  applyTheme(theme);
+  try { await chrome.storage.local.set({ popupTheme: theme }); }
+  catch { message.textContent = "Could not save the color preference."; }
+});
 
 async function request(kind, extra = {}) {
   const response = await chrome.runtime.sendMessage({ kind, ...extra });
@@ -198,5 +216,6 @@ exportButton.addEventListener("click", () => {
 
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area === "local" && changes.monitorState) refresh();
+  if (area === "local" && changes.popupTheme) applyTheme(changes.popupTheme.newValue);
 });
 refresh();

@@ -63,4 +63,24 @@ h2{font-size:1.3rem}h3{font-size:1.08rem}
 .severity-low{color:var(--muted)}.severity-medium{color:var(--warning)}.severity-high{color:#ee8089;border-color:#9b4b57}
 .code-state,.event-name{display:inline-block;padding:.18rem .45rem;border-radius:6px;border:1px solid var(--line);background:var(--soft);white-space:nowrap;font-size:.75rem;font-weight:700}
 .code-used{color:var(--signal)}.event-name{color:var(--text);max-width:165px;overflow:hidden;text-overflow:ellipsis}
-#report-panel{margin-top:1.25rem}
+/* One setup step per row; the monitoring table keeps the full page width. */
+.workspace-flow{display:grid;gap:1rem;margin:1.2rem auto 0}
+.workflow-step{width:min(100%,820px);margin-inline:auto;height:auto}
+.workflow-step .form-stack{max-width:680px}
+.workflow-step .exam-list{max-height:230px}
+.workflow-step.code-output{margin-top:0}
+.workflow-step.code-output pre{white-space:pre-wrap;overflow-wrap:anywhere}
+.monitoring-panel{margin-top:1.4rem}
+
+/* The report stays out of the page layout until a student is selected. */
+.report-modal{width:min(900px,calc(100vw - 2rem));max-width:none;max-height:min(88vh,850px);padding:0;border:1px solid var(--line);border-radius:16px;background:var(--surface);color:var(--text);box-shadow:0 24px 80px rgb(0 0 0 / 48%)}
+.report-modal::backdrop{background:rgb(1 6 12 / 72%)}
+.report-modal-shell{display:flex;flex-direction:column;max-height:min(88vh,850px)}
+.report-modal-header{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;padding:1.35rem 1.5rem;border-bottom:1px solid var(--line)}
+.report-modal-header h2{margin:0 0 .35rem}
+.report-modal-header #report-meta{margin:0;overflow-wrap:anywhere}
+.report-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:.5rem}
+.report-actions button,.report-actions .button-link{min-height:36px;padding:.4rem .65rem;white-space:nowrap;font-size:.82rem}
+.report-modal-body{overflow-y:auto;padding:1.25rem 1.5rem 1.5rem;overscroll-behavior:contain}
+.report-modal-body .timeline{margin-top:1.2rem}
+@media(max-width:620px){.report-modal{width:calc(100vw - 1rem);max-height:94vh}.report-modal-shell{max-height:94vh}.report-modal-header{display:block;padding:1rem}.report-actions{justify-content:flex-start;margin-top:.9rem}.report-modal-body{padding:1rem}}

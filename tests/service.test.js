@@ -170,7 +170,7 @@ test('public connection check reports service readiness', {skip: !base}, async (
   const result = await call('/api/health');
   assert.equal(result.status,200);
   assert.equal(result.data.status,'ok');
-  assert.equal(result.data.version,'0.3.1');
+  assert.equal(result.data.version,'0.3.2');
 });
 
 test('teacher accepts signed-in Google Forms links and stores a canonical respondent URL',

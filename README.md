@@ -6,7 +6,7 @@
 
 <p align="center"><a href="#installation--setup">Setup</a> · <a href="#user-guide">Professor guide</a> · <a href="#system-architecture--components">Architecture</a> · <a href="#test-results">Test results</a> · <a href="#limitations">Limitations</a></p>
 
-> **Status · October 13, 2026:** The v0.1.2 local Chrome and Windows monitor on `main` passed live checks. Phase 3 remains on `feat/phase3-teacher-monitoring`. The v0.3.1 code passed 23 local automated checks. Its professor table was inspected live in dark and light modes, and its paired-session End guard and marked early stop passed a guided Chrome check. The earlier v0.3.0 extension demonstrated delivery, supported browser and Windows categories, confirmed-submission ending, and outage recovery. Live connection-gap display during an actual outage, HTTPS deployment, and separate-device monitoring remain unverified. Incidents are observations, not cheating verdicts.
+> **Status · October 18, 2026:** The v0.1.2 local Chrome and Windows monitor on `main` passed live checks. Phase 3 remains on `feat/phase3-teacher-monitoring`. The v0.3.2 layout, report modal, and popup theme passed 23 local automated checks; their guided visual checks are pending. Earlier Phase 3 live checks demonstrated delivery, supported browser and Windows categories, confirmed-submission ending, outage recovery, and marked early stop. Live connection-gap display during an actual outage, HTTPS deployment, and separate-device monitoring remain unverified. Incidents are observations, not cheating verdicts.
 
 ## PROJECT OVERVIEW
 
@@ -27,9 +27,9 @@ Google Forms does not give a professor a record of tab changes or supported desk
 
 | Component | Behavior | Evidence |
 | --- | --- | --- |
-| Chrome extension | Start/end, tab and focus changes, fullscreen, copy/paste, local timeline and JSON, webpage/ChatGPT/PDF categories; paired-session End guard and marked early stop | v0.1.2 and v0.3.0 live checks passed; v0.3.1 End guard and early stop passed automated and guided Chrome checks |
+| Chrome extension | Start/end, tab and focus changes, fullscreen, copy/paste, local timeline and JSON, webpage/ChatGPT/PDF categories; paired-session End guard, marked early stop, and popup dark/light toggle | v0.1.2 and v0.3.0 live checks passed; v0.3.1 End guard and early stop passed guided checks; v0.3.2 theme awaits live UI check |
 | Windows companion | Foreground Word, Notepad, and verified Adobe Acrobat categories; disconnect signal | v0.1.2 live gate passed on the development machine |
-| Professor service | Protected Form records, `.xlsx` classes, one-use codes, 10-second dashboard refresh, student status and latest activity table, full report on request, JSON, 30-day cleanup | v0.3.1 API and live table checks passed; full local and HTTPS gates pending |
+| Professor service | Protected Form records, `.xlsx` classes, one-use codes, 10-second dashboard refresh, student status and latest activity table, report modal on request, JSON, 30-day cleanup | v0.3.1 API and live table checks passed; v0.3.2 modal awaits guided UI check; full local and HTTPS gates pending |
 
 The popup warns when other tabs are open in the same Chrome window. **Start in fullscreen** is off by default so window controls remain visible; students can opt in. A confirmed Form submission ended monitoring in the tested practice Form. In v0.3.1, normal **End Examination** is unavailable during a paired session before confirmed submission; **Report a problem and stop early** is a marked fallback for technical failure. Local-only sessions retain manual End. This UI guard cannot stop a student from disabling the extension or closing Chrome. Question timing, screenshot-key detection, CSV, and scoring are deferred.
 
@@ -70,9 +70,9 @@ Chrome Manifest V3, JavaScript/HTML/CSS, Chrome storage/alarms/native messaging,
 1. Run `npm.cmd install`, `npm.cmd run build:roster`, then `npm.cmd run db:local`.
 2. Put `TEACHER_PASSWORD`, a random `SESSION_SECRET`, and `ALLOWED_EXTENSION_IDS=amlfomdhhaklmifkneplnngkbaabibgp` in an ignored `.dev.vars` file.
 3. Run `npm.cmd run dev -- --ip 127.0.0.1 --port 8787`. Open the [local setup guide](http://127.0.0.1:8787/) and [professor workspace](http://127.0.0.1:8787/teacher.html).
-4. Run `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/package-demo.ps1`. In Chrome's **Load unpacked** picker, select the inner `dist/integritest-v0.3.1/extension` folder containing `manifest.json`. Its expected ID is `amlfomdhhaklmifkneplnngkbaabibgp`. Install the bundled native host with that ID.
+4. Run `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/package-demo.ps1`. In Chrome's **Load unpacked** picker, select the inner `dist/integritest-v0.3.2/extension` folder containing `manifest.json`. Its expected ID is `amlfomdhhaklmifkneplnngkbaabibgp`. Install the bundled native host with that ID.
 
-The v0.3.1 ZIP targets localhost. Its [SHA-256 file](public/downloads/integritest-v0.3.1.sha256) identifies the exact package. The local password is outside Git. A reachable HTTPS package will be built for its exact deployed origin after the local gate passes.
+The v0.3.2 ZIP targets localhost. Its [SHA-256 file](public/downloads/integritest-v0.3.2.sha256) identifies the exact package. The local password is outside Git. A reachable HTTPS package will be built for its exact deployed origin after the local gate passes.
 
 **HTTPS release after the local gate:** Cloudflare Workers and D1 are the selected host because the same Worker, static pages, scheduled cleanup, and D1 schema already run locally. Sign in with `npx wrangler login`, create `integritest` with `npx wrangler d1 create integritest`, replace the placeholder D1 ID in `wrangler.jsonc`, and apply migrations with `npx wrangler d1 migrations apply integritest --remote`. Set `TEACHER_PASSWORD`, `SESSION_SECRET`, and `ALLOWED_EXTENSION_IDS` with `npx wrangler secret put NAME`, then run `npx wrangler deploy`. Rebuild the package with `scripts/package-demo.ps1 -ServiceOrigin https://YOUR_WORKER_ORIGIN`, verify its checksum, and deploy the updated static assets. Pairing, delivery, gaps, ending, teacher access, and JSON privacy still require a separate Windows device before remote monitoring is called operational. See [Cloudflare's D1 local development](https://developers.cloudflare.com/d1/best-practices/local-development/) and [static assets](https://developers.cloudflare.com/workers/static-assets/binding/) guides.
 
@@ -83,11 +83,13 @@ The v0.3.1 ZIP targets localhost. Its [SHA-256 file](public/downloads/integrites
 | Vercel + [Supabase Free](https://supabase.com/docs/guides/platform/free-project-pausing) | Requires splitting or rewriting the current Worker/D1 path; inactive Free projects can pause. |
 | [GitHub Pages](https://docs.github.com/en/pages/getting-started-with-github-pages/creating-a-github-pages-site) | Can serve a guide, but cannot run the teacher API or database. |
 
+The October 19 local demonstration needs no hosting payment or Chrome Web Store listing. Store publication is optional and requires a [one-time developer registration fee](https://developer.chrome.com/docs/webstore/register/). A later Cloudflare deployment can use the included `workers.dev` address and Free allowances; the Workers Paid plan starts at $5 USD/month. Free D1 queries fail after a daily read or write limit is reached. Measure D1 rows read by the table's 10-second aggregate query before a full-class rollout; the free-tier fit is an estimate, not a hosted result. See [Workers pricing](https://developers.cloudflare.com/workers/platform/pricing/), [D1 pricing](https://developers.cloudflare.com/d1/platform/pricing/), and [workers.dev routing](https://developers.cloudflare.com/workers/configuration/routing/workers-dev/).
+
 ## USER GUIDE
 
-**Student:** Obtain a one-time code from the professor. Pair in the extension popup, open the registered Form link, choose whether to start in fullscreen, and select **Start Examination**. After submitting, check the status. If it stays Monitoring after confirmed submission, contact the professor. For a technical failure, **Report a problem and stop early** records a distinct early end. Local JSON export is a fallback if delivery fails.
+**Student:** Obtain a one-time code from the professor. Pair in the extension popup, open the registered Form link, choose whether to start in fullscreen, and select **Start Examination**. The popup has a saved dark/light choice and lists the newest local incident first. After submitting, check the status. If it stays Monitoring after confirmed submission, contact the professor. For a technical failure, **Report a problem and stop early** records a distinct early end. Local JSON export is a fallback if delivery fails.
 
-**Professor:** Sign in at the [workspace](public/teacher.html). Import a class workbook, inspect the preview and row errors, and save it. Register a published Form and assign the class to that exam. Copy or download the codes when shown. The table refreshes every 10 seconds and shows each student's code state, start time, Low/Medium/High counts, connection status, latest activity, and event name. **View full report** opens that student's timeline and service JSON. The raw code is shown only when issued. Match Form responses separately.
+**Professor:** Sign in at the [workspace](public/teacher.html). Follow one setup card per step: import a class workbook, inspect the preview and row errors, register a published Form, select it, and assign the class. Copy or download the codes when shown. The full-width table refreshes every 10 seconds and shows each student's code state, start time, Low/Medium/High counts, connection status, latest activity, and event name. **View full report** opens a modal with newest incidents first and a JSON download; that exported JSON remains in ascending sequence. The raw code is shown only when issued. Match Form responses separately.
 
 The [public setup page](public/index.html) explains installation and what is recorded. The published [10-question Systems Integration and Architecture practice Form](https://docs.google.com/forms/d/e/1FAIpQLSdOyiXOUU2YWqp2RFh6SR_-dPf8ZmixAjrT7bZ4EE0TnS7oVQ/viewform) can be used for activity demonstrations. Its answers are not collected by the extension.
 
@@ -110,6 +112,7 @@ Run `npm.cmd test`. With the local Worker running, set `SERVICE_TEST_URL=http://
 | v0.3.0 actual outage recovery | Student 4's `www.iana.org` event was captured on October 12 at 11:48:50 UTC while port 8787 had no listener and received by D1 on October 13 at 04:26:35 UTC after Chrome and the service returned. The ended session has 89 incidents with 89 unique IDs and sequences 1–89. The teacher's gap label during this outage was not observed live. |
 | v0.3.1 automated and professor UI checks | **23/23 passed** with the local Worker on October 13, including refusal of normal End before confirmation, a separate early-stop reason, severity counts, latest-event fields, and one-use code state. The professor table and full-report action were inspected in Chrome in dark and light modes. |
 | v0.3.1 paired-session early stop | Student 5 paired and started with the Windows monitor connected. Normal End was disabled and the marked problem-stop control was available. The student used that control before submitting. The professor table showed **Ended early** and **Stopped before confirmed submission**. D1 stored `STUDENT_STOPPED_EARLY` with 16 incidents, 16 unique IDs, and sequences 1–16. Opening `www.iana.org` after End left the report at 16 incidents. |
+| v0.3.2 local automated check | **23/23 passed** with the local Worker on October 18. The end-acknowledgement test now waits within a bounded interval instead of assuming a fixed 250 ms response. The package contains manifest version 0.3.2 and its ZIP matches the published SHA-256. Guided visual checks of the new professor modal and popup theme are pending. |
 | Separate-device HTTPS gate | **Pending.** No hosted service or remote device test has been run. |
 
 <details><summary>Earlier test history</summary>
@@ -124,7 +127,7 @@ The extension cannot observe another browser or device. A foreground app categor
 
 ## CONCLUSION
 
-The local monitor is demonstrable. Phase 3's roster, delivery, Form submission, outage recovery, professor table, and paired-session end control have the local evidence listed above. Live gap display during an outage and the deployed separate-device flow must pass before remote monitoring is presented as operational.
+The local monitor is demonstrable. Phase 3's roster, delivery, Form submission, outage recovery, professor table, and paired-session end control have the local evidence listed above. The v0.3.2 visual checks, live gap display during an outage, and deployed separate-device flow remain before Phase 3 or remote monitoring can be presented as complete.
 
 ## APPENDICES
 

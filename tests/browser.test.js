@@ -119,11 +119,15 @@ test('paired extension rejects wrong Form, retries events, and ends only after o
     assert.equal(state.activeSession.acknowledgedSequence,state.incidents.length);
     await h.send({kind:'CONTENT_EVENT',type:'FORM_SUBMISSION_CONFIRMED'},
       {tab:h.tabs.get(1),url:'https://docs.google.com/forms/u/0/d/e/demo/formResponse'});
-    await h.flush(250);
-    state = (await h.send({kind:'GET_STATUS'})).result;
+    const deadline = Date.now() + 5000;
+    do {
+      state = (await h.send({kind:'GET_STATUS'})).result;
+      if (state.lastSession?.remoteEndAck) break;
+      await h.flush(50);
+    } while (Date.now() < deadline);
     assert.equal(state.activeSession,null);
     assert.equal(state.lastSession.endReason,'FORM_SUBMISSION_OBSERVED');
-    assert.equal(state.lastSession.remoteEndAck,true);
+    assert.equal(state.lastSession.remoteEndAck,true,state.lastSession.remoteError || 'End acknowledgement timed out.');
     const localReport = buildReport(state);
     assert.ok(!JSON.stringify(localReport).includes(state.pairing.credential));
     assert.ok(!JSON.stringify(localReport).includes(state.pairing.formUrl));
