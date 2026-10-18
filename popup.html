@@ -3,16 +3,26 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Exam Integrity Monitor</title>
+  <title>IntegriTest</title>
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
   <main>
     <header>
-      <p class="eyebrow">Google Forms <span id="build-version"></span></p>
-      <h1>Exam Integrity Monitor</h1>
+      <div class="popup-heading"><p class="eyebrow">Google Forms <span id="build-version"></span></p><button id="theme-toggle" class="theme-toggle" type="button" aria-label="Switch to dark mode">Dark mode</button></div>
+      <h1>IntegriTest</h1>
       <p class="intro">Observable activity for instructor review. Incidents are not proof of cheating.</p>
     </header>
+
+    <section class="status-panel" aria-labelledby="pair-heading">
+      <h2 id="pair-heading">Student pairing</h2>
+      <label for="join-code">One-time code from professor</label>
+      <div class="actions"><input id="join-code" type="text" maxlength="16" autocomplete="off" spellcheck="false" placeholder="16-character code"><button id="pair-button" type="button">Pair</button></div>
+      <p id="pair-detail" class="detail">Local-only mode. Enter a code to send incidents to the teacher service.</p>
+      <p id="delivery-detail" class="detail"></p>
+      <p id="tab-warning" class="detail" role="status"></p>
+      <button id="sync-button" class="secondary" type="button">Check connection / retry</button>
+    </section>
 
     <section class="status-panel" aria-labelledby="status-heading">
       <div class="status-row">
@@ -22,14 +32,16 @@
       <p id="session-detail" class="detail">Checking saved session…</p>
       <p id="desktop-detail" class="detail">Desktop monitor: checking status</p>
       <label class="fullscreen-option" for="fullscreen-choice">
-        <input id="fullscreen-choice" type="checkbox" checked>
+        <input id="fullscreen-choice" type="checkbox">
         Start in fullscreen
       </label>
-      <p class="detail">Uncheck to keep Chrome tabs and window controls visible. Fullscreen changes are still monitored. In fullscreen, use Ctrl+Tab for Chrome tabs or F11 to exit.</p>
+      <p class="detail">Leave unchecked to keep Chrome tabs and window controls visible. Fullscreen changes are still monitored. If you choose fullscreen, use F11 to exit.</p>
       <div class="actions">
         <button id="start-button" type="button">Start Examination</button>
         <button id="end-button" type="button" class="secondary" disabled>End Examination</button>
       </div>
+      <p id="end-guidance" class="detail" hidden></p>
+      <button id="early-stop-button" type="button" class="secondary" hidden>Report a problem and stop early</button>
       <p id="message" role="status" aria-live="polite"></p>
     </section>
 

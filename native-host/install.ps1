@@ -1,7 +1,9 @@
 param(
     [Parameter(Mandatory = $true)]
     [ValidatePattern('^[a-p]{32}$')]
-    [string]$ExtensionId
+    [string]$ExtensionId,
+    [ValidatePattern('^[a-p]{32}$')]
+    [string[]]$AdditionalExtensionIds = @()
 )
 
 $ErrorActionPreference = 'Stop'
@@ -17,17 +19,18 @@ $source = Join-Path $PSScriptRoot 'ExamForegroundHost.cs'
 if ($LASTEXITCODE -ne 0) { throw 'Native host compilation failed.' }
 
 $manifestPath = Join-Path $PSScriptRoot 'host-manifest.json'
+$allowedOrigins = @(@($ExtensionId) + $AdditionalExtensionIds | Select-Object -Unique | ForEach-Object { "chrome-extension://$_/" })
 $manifest = @{
     name = $hostName
     description = 'Google Forms exam foreground category monitor'
     path = $binary
     type = 'stdio'
-    allowed_origins = @("chrome-extension://$ExtensionId/")
+    allowed_origins = $allowedOrigins
 } | ConvertTo-Json -Depth 4
 [System.IO.File]::WriteAllText($manifestPath, $manifest, (New-Object System.Text.UTF8Encoding($false)))
 
 $registryPath = "HKCU:\Software\Google\Chrome\NativeMessagingHosts\$hostName"
 New-Item -Path $registryPath -Force | Out-Null
 Set-Item -Path $registryPath -Value $manifestPath
-Write-Output "Registered $hostName for chrome-extension://$ExtensionId/"
+Write-Output "Registered $hostName for $($allowedOrigins -join ', ')"
 Write-Output "Host: $binary"

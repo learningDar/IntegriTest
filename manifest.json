@@ -1,16 +1,35 @@
 {
   "manifest_version": 3,
-  "name": "Google Forms Exam Integrity Monitor",
-  "version": "0.1.2",
+  "name": "IntegriTest",
+  "version": "0.3.2",
   "description": "Records observable exam activity for instructor review.",
-  "permissions": ["storage", "tabs", "nativeMessaging"],
-  "background": { "service_worker": "background.js" },
-  "action": { "default_popup": "popup.html" },
+  "permissions": [
+    "storage",
+    "tabs",
+    "nativeMessaging",
+    "alarms"
+  ],
+  "host_permissions": [
+    "http://127.0.0.1:8787/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": { "16": "icons/icon-16.png", "32": "icons/icon-32.png", "48": "icons/icon-48.png", "128": "icons/icon-128.png" }
+  },
+  "icons": { "16": "icons/icon-16.png", "32": "icons/icon-32.png", "48": "icons/icon-48.png", "128": "icons/icon-128.png" },
   "content_scripts": [
     {
-      "matches": ["https://docs.google.com/forms/*"],
-      "js": ["content.js"],
+      "matches": [
+        "https://docs.google.com/forms/*"
+      ],
+      "js": [
+        "content.js"
+      ],
       "run_at": "document_start"
     }
-  ]
+  ],
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAux+3pRyVdJtjRRuQpdHgIbCgUrgTro0QCWttDaZskyoVRUPfqYts2pVF/b32zFH+hFJUGMvWEC3JlZ0zP5qyYNqAffCdojTg63NGJCCpYpukjzD2m90VYqYOkqt5eo9MO0xiLJnRulS95DEgcXBPZHFe6f6fRdYMaqE+bsdv0xX5chQFts/ObSo6OOTGye32Db2iawpmHI8BrMT5XGeagnsEa3r5xTG8dJb2yvIiMkc+3I/pwbk69PbdAvOC1GYVPsaitcB4k/Rvje2wcIU61Wppv89RiUGKyxdwyjumJd5IEYy85wlBdmXTLkRGEBY/pVGJm89vBJ9TeSA3wThHxwIDAQAB"
 }

@@ -1,37 +1,47 @@
-:root { font-family: Arial, Helvetica, sans-serif; color: #1e293b; background: #f7f9fc; }
-* { box-sizing: border-box; }
-body { width: 390px; max-height: 580px; margin: 0; overflow-y: auto; }
-main { padding: 18px; }
-h1, h2, p { margin: 0; }
-h1 { font-size: 19px; line-height: 1.25; margin: 3px 0 8px; }
-h2 { font-size: 14px; }
-.eyebrow { color: #31599c; font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
-.intro, .detail { color: #56657a; font-size: 12px; line-height: 1.45; }
-.intro { margin-bottom: 16px; }
-.status-panel { padding: 14px; background: white; border: 1px solid #dde4ef; border-radius: 12px; box-shadow: 0 1px 3px #1725540d; }
-.status-row, .report-header, .actions { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.status-panel .detail { margin-top: 8px; }
-.fullscreen-option { display: flex; align-items: center; gap: 7px; margin-top: 12px; font-size: 12px; font-weight: 700; cursor: pointer; }
-.fullscreen-option input { margin: 0; accent-color: #1d4ed8; }
-.fullscreen-option:has(input:disabled) { opacity: .55; cursor: default; }
-.badge { display: inline-block; padding: 4px 9px; border-radius: 999px; background: #e7ebf2; color: #46546b; font-size: 11px; font-weight: 700; }
-.badge.active { background: #dcfce7; color: #166534; }
-.actions { margin-top: 14px; }
-button { min-height: 34px; padding: 7px 10px; border: 1px solid #1d4ed8; border-radius: 7px; background: #1d4ed8; color: white; cursor: pointer; font-size: 12px; font-weight: 700; }
-button:hover:not(:disabled) { background: #1e40af; }
-button:focus-visible { outline: 3px solid #93c5fd; outline-offset: 2px; }
-button:disabled { opacity: .48; cursor: default; }
-button.secondary { background: white; color: #1d4ed8; }
-button.secondary:hover:not(:disabled) { background: #eff6ff; }
-#message { min-height: 16px; margin-top: 9px; color: #b42318; font-size: 12px; }
-.report-header { align-items: flex-start; margin: 18px 0 10px; }
-.report-header .detail { margin-top: 3px; }
-button.text-button { min-height: 28px; padding: 4px 7px; border-color: transparent; background: transparent; color: #1d4ed8; }
-button.text-button:hover:not(:disabled) { background: #e8efff; }
-.incidents { padding: 0; margin: 0; list-style: none; }
-.incidents li { margin-bottom: 7px; padding: 10px; background: white; border: 1px solid #e2e8f0; border-radius: 8px; }
-.incident-top { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; font-weight: 700; }
-.incident-time { color: #64748b; font-weight: 400; white-space: nowrap; }
-.incident-detail { margin-top: 4px; font-size: 12px; line-height: 1.35; overflow-wrap: anywhere; }
-.incident-host { margin-top: 4px; color: #64748b; font-size: 11px; }
-.empty { color: #64748b; font-size: 12px; padding: 12px 0; }
+:root{color-scheme:light;font:14px/1.45 "Segoe UI",system-ui,sans-serif;--bg:#f4f4f5;--surface:#fff;--soft:#ececf0;--text:#18181b;--muted:#52525b;--line:#d4d4d8;--accent:#3c4bb4;--accent-hover:#2d3d9b;--accent-ink:#fff;--success-bg:#dcfce7;--success:#166534;--error:#b42318}
+:root[data-theme=dark]{color-scheme:dark;--bg:#080808;--surface:#141416;--soft:#1b1b20;--text:#f4f4f5;--muted:#a1a1aa;--line:#37373e;--accent:#a5b4fc;--accent-hover:#c7d2fe;--accent-ink:#101114;--success-bg:#15352c;--success:#80e3bd;--error:#fda4af}
+*{box-sizing:border-box}
+body{width:390px;max-height:580px;margin:0;overflow-y:auto;background:var(--bg);color:var(--text)}
+main{padding:14px}
+h1,h2,p{margin:0}
+h1{font-size:20px;line-height:1.2;margin:3px 0 5px}
+h2{font-size:14px}
+.popup-heading,.status-row,.report-header,.actions{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.eyebrow{color:var(--accent);font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase}
+.intro,.detail{color:var(--muted);font-size:12px;line-height:1.4}
+.intro{margin-bottom:12px}
+.theme-toggle{flex:none;min-height:30px;padding:4px 9px;border:1px solid var(--line);border-radius:999px;background:var(--soft);color:var(--text);font-size:11px;font-weight:700}
+.theme-toggle:hover{background:var(--surface)}
+.status-panel{padding:12px;background:var(--surface);border:1px solid var(--line);border-radius:11px}
+.status-panel+.status-panel{margin-top:9px}
+.status-panel label:not(.fullscreen-option){display:block;margin-top:8px;color:var(--text);font-size:12px;font-weight:700}
+#join-code{min-width:0;flex:1;height:34px;border:1px solid var(--line);border-radius:7px;padding:5px 8px;background:var(--surface);color:var(--text);font:inherit}
+#join-code::placeholder{color:var(--muted)}
+#pair-detail,#delivery-detail,#tab-warning{overflow-wrap:anywhere}
+.status-panel .detail{margin-top:7px}
+.fullscreen-option{display:flex;align-items:center;gap:7px;margin-top:10px;font-size:12px;font-weight:700;cursor:pointer}
+.fullscreen-option input{margin:0;accent-color:var(--accent)}
+.fullscreen-option:has(input:disabled){opacity:.55;cursor:default}
+.badge{display:inline-block;flex:none;padding:4px 9px;border-radius:999px;background:var(--soft);color:var(--muted);font-size:11px;font-weight:800}
+.badge.active{background:var(--success-bg);color:var(--success)}
+.actions{margin-top:11px}
+button{min-height:34px;padding:7px 10px;border:1px solid var(--accent);border-radius:7px;background:var(--accent);color:var(--accent-ink);cursor:pointer;font-size:12px;font-weight:750}
+button:hover:not(:disabled){background:var(--accent-hover)}
+button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+button:disabled{opacity:.5;cursor:default}
+button.secondary{background:var(--surface);color:var(--accent)}
+button.secondary:hover:not(:disabled){background:var(--soft)}
+a{color:var(--accent)}
+#message:not(:empty){margin-top:8px;color:var(--error);font-size:12px}
+.report-header{align-items:flex-start;margin:14px 0 9px}
+.report-header .detail{margin-top:2px}
+button.text-button{min-height:28px;padding:4px 7px;border-color:transparent;background:transparent;color:var(--accent)}
+button.text-button:hover:not(:disabled){background:var(--soft)}
+.incidents{padding:0;margin:0;list-style:none}
+.incidents li{margin-bottom:6px;padding:9px;background:var(--surface);border:1px solid var(--line);border-radius:8px}
+.incident-top{display:flex;justify-content:space-between;gap:8px;font-size:11px;font-weight:800}
+.incident-time{color:var(--muted);font-weight:400;white-space:nowrap}
+.incident-detail{margin-top:3px;font-size:12px;line-height:1.35;overflow-wrap:anywhere}
+.incident-host{margin-top:3px;color:var(--muted);font-size:11px}
+.empty{color:var(--muted);font-size:12px;padding:10px 0}
+.status-panel [hidden]{display:none!important}
