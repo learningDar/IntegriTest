@@ -1,14 +1,18 @@
-<table><tr><td width="112"><img src="public/brand/integritest-mark.svg" width="96" alt="IntegriTest laptop and eye mark"></td><td><h1>IntegriTest</h1><p>Google Forms exam activity records for professor review.</p></td></tr></table>
+<p align="center"><img src="public/brand/integritest-mark.svg" width="176" alt="IntegriTest laptop and eye icon"></p>
 
-![Local monitor: verified](https://img.shields.io/badge/local_monitor-v0.1.2_verified-445b9f) ![Remote flow: in development](https://img.shields.io/badge/remote_flow-in_development-666666) [![License: MIT](https://img.shields.io/badge/license-MIT-a5b4fc)](LICENSE)
+<h1 align="center">IntegriTest</h1>
 
-[Setup](#installation--setup) · [User guide](#user-guide) · [Architecture](#system-architecture--components) · [Test results](#test-results) · [Limitations](#limitations)
+<p align="center">Google Forms exam activity records for professor review.</p>
 
-> **Stable branch:** `main` contains the tested local v0.1.2 Chrome and Windows monitor. The teacher service, class rosters, and remote delivery are being built on `feat/phase3-teacher-monitoring`; they are not part of this stable build. Incidents are observations for review, not cheating verdicts.
+<p align="center"><img alt="Local monitor verified" src="https://img.shields.io/badge/local_monitor-v0.1.2_verified-445b9f"> <img alt="Remote flow in development" src="https://img.shields.io/badge/remote_flow-in_development-666666"> <a href="LICENSE"><img alt="MIT license" src="https://img.shields.io/badge/license-MIT-a5b4fc"></a></p>
+
+<p align="center"><a href="#installation--setup">Setup</a> · <a href="#user-guide">User guide</a> · <a href="#system-architecture--components">Architecture</a> · <a href="#limitations">Limitations</a></p>
+
+<p align="center"><strong>Stable:</strong> local v0.1.2 monitor · <strong>Phase 3:</strong> teacher view in development</p>
 
 ## PROJECT OVERVIEW
 
-IntegriTest records observable browser and supported Windows foreground activity during a Google Forms examination. This stable build stores incidents locally, displays a timeline, and exports JSON for professor review.
+IntegriTest records observable browser and supported Windows foreground activity during a Google Forms examination. This stable build stores incidents locally, displays a timeline, and exports JSON for professor review. The teacher service is being developed on `feat/phase3-teacher-monitoring`; it is not part of this build.
 
 ## PROBLEM STATEMENT
 
@@ -26,13 +30,11 @@ The extension offers start/end controls, tab and focus signals, fullscreen chang
 
 ## SYSTEM ARCHITECTURE / COMPONENTS
 
-```mermaid
-flowchart LR
-    F[Google Form] --> E[Chrome MV3 extension]
-    H[Windows C# native host] -->|App category + timestamp| E
-    E --> L[Chrome local storage]
-    L --> J[Timeline + JSON export]
-```
+| Input | Component | Output |
+| --- | --- | --- |
+| Google Form and Chrome tab activity | Chrome Manifest V3 extension | Category-only browser incidents |
+| Windows foreground application | C# native messaging host → extension | App category and timestamp |
+| Extension incidents | Chrome local storage | On-screen timeline and JSON export |
 
 The extension service worker handles browser events and session boundaries. The native host reports a category without document contents, window titles, or file paths. Phase 3's Worker/D1 architecture is documented on its development branch and requires its own acceptance gate.
 
@@ -57,24 +59,6 @@ See the [browser test steps](tests/MANUAL_BROWSER.md) and [desktop test steps](t
 Open a supported Form respondent page, choose whether to start in fullscreen, then select **Start Examination**. Visit the quiz as normal. The popup shows status and an incident timeline. Select **End Examination** and **Export JSON** when finished. Send the JSON to the professor using the agreed class process; this stable build has no teacher upload or live view.
 
 The published [10-question Systems Integration and Architecture practice Form](https://docs.google.com/forms/d/e/1FAIpQLSdOyiXOUU2YWqp2RFh6SR_-dPf8ZmixAjrT7bZ4EE0TnS7oVQ/viewform) is available for a local demonstration. Use nonpersonal answers; the extension does not capture them.
-
-## QUALITY ASSURANCE & TESTING
-
-Run `node --test tests/*.test.js` for repeatable extension and Windows host checks. The [MVP context](GOOGLE_FORMS_EXAM_MONITOR_MVP_CONTEXT.md) defines the phase gates. The local browser and desktop phases passed; final combined QA will follow the remote teacher gate on the development branch.
-
-## TEST RESULTS
-
-| Gate | Observed result |
-| --- | --- |
-| Chrome v0.1.2 | Passed local start/end, webpage and ChatGPT classification, focus/fullscreen, copy/paste, persistence, timeline, and JSON export |
-| Windows v0.1.2 | Passed Word, Notepad, Adobe Acrobat, Chrome PDF, host interruption, and no incident after End on the development machine |
-| Phase 3 remote delivery | In development on a separate branch; no HTTPS or separate-device result is claimed |
-
-<details><summary>Test context</summary>
-
-The local browser and Windows gates were demonstrated on October 10–11, 2026. The foreground app signal indicates that an application became active; it does not show what was read or typed. The later teacher-service checks do not change the stable v0.1.2 result.
-
-</details>
 
 ## LIMITATIONS
 
