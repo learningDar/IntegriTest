@@ -10,4 +10,4 @@ Use the repository skills in `.agents/skills/` for the relevant work:
 - `$exam-monitor-qa` for phase acceptance and demonstration review.
 - `$exam-monitor-docu` when a phase passes its tests or project behavior changes enough to make the README inaccurate.
 
-Finish and test a phase before moving to the next. Record actual test results in the README after each passed phase; never imply untested features work. Provide reproducible manual test steps with code changes.
+Finish and test a phase before moving to the next. Record actual test results in `docs/TEST_EVIDENCE.md` after each passed phase; keep the README's status accurate without adding QA or test-results sections. Never imply untested features work. Provide reproducible manual test steps with code changes.
