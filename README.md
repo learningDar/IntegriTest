@@ -6,7 +6,7 @@
 
 <p align="center"><a href="#installation--setup">Setup</a> · <a href="#user-guide">Professor guide</a> · <a href="#system-architecture--components">Architecture</a> · <a href="#test-results">Test results</a> · <a href="#limitations">Limitations</a></p>
 
-> **Status · October 18, 2026:** The v0.1.2 local Chrome and Windows monitor on `main` passed live checks. Phase 3 remains on `feat/phase3-teacher-monitoring`. The v0.3.2 layout, report modal, and popup theme passed 23 local automated checks; their guided visual checks are pending. Earlier Phase 3 live checks demonstrated delivery, supported browser and Windows categories, confirmed-submission ending, outage recovery, and marked early stop. Live connection-gap display during an actual outage, HTTPS deployment, and separate-device monitoring remain unverified. Incidents are observations, not cheating verdicts.
+> **Status · October 18, 2026:** The v0.1.2 local Chrome and Windows monitor on `main` passed live checks. Phase 3 remains on `feat/phase3-teacher-monitoring`. The v0.3.2 build passed 23 local automated checks; the new layout, report modal, and popup theme still need guided visual checks. Earlier Phase 3 live checks demonstrated delivery, supported browser and Windows categories, confirmed-submission ending, outage recovery, and marked early stop. Live connection-gap display during an actual outage, HTTPS deployment, and separate-device monitoring remain unverified. Incidents are observations, not cheating verdicts.
 
 ## PROJECT OVERVIEW
 
