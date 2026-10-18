@@ -6,7 +6,7 @@
 
 <p align="center"><a href="#installation--setup">Setup</a> · <a href="#user-guide">Professor guide</a> · <a href="#system-architecture--components">Architecture</a> · <a href="#test-results">Test results</a> · <a href="#limitations">Limitations</a></p>
 
-> **Status · October 18, 2026:** The v0.1.2 local Chrome and Windows monitor on `main` passed live checks. Phase 3 remains on `feat/phase3-teacher-monitoring`. The v0.3.2 build passed 23 local automated checks; the new layout, report modal, and popup theme still need guided visual checks. Earlier Phase 3 live checks demonstrated delivery, supported browser and Windows categories, confirmed-submission ending, outage recovery, and marked early stop. Live connection-gap display during an actual outage, HTTPS deployment, and separate-device monitoring remain unverified. Incidents are observations, not cheating verdicts.
+> **Status · October 18, 2026:** The v0.1.2 local Chrome and Windows monitor on `main` passed live checks. Phase 3 remains on `feat/phase3-teacher-monitoring`. The v0.3.2 build passed 23 local automated checks. Its professor layout, monitoring table, and report modal passed a guided desktop and narrow-width visual check; the popup theme still awaits a live visual check. Earlier Phase 3 live checks demonstrated delivery, supported browser and Windows categories, confirmed-submission ending, outage recovery, and marked early stop. Live connection-gap display during an actual outage, HTTPS deployment, and separate-device monitoring remain unverified. Incidents are observations, not cheating verdicts.
 
 ## PROJECT OVERVIEW
 
@@ -29,7 +29,7 @@ Google Forms does not give a professor a record of tab changes or supported desk
 | --- | --- | --- |
 | Chrome extension | Start/end, tab and focus changes, fullscreen, copy/paste, local timeline and JSON, webpage/ChatGPT/PDF categories; paired-session End guard, marked early stop, and popup dark/light toggle | v0.1.2 and v0.3.0 live checks passed; v0.3.1 End guard and early stop passed guided checks; v0.3.2 theme awaits live UI check |
 | Windows companion | Foreground Word, Notepad, and verified Adobe Acrobat categories; disconnect signal | v0.1.2 live gate passed on the development machine |
-| Professor service | Protected Form records, `.xlsx` classes, one-use codes, 10-second dashboard refresh, student status and latest activity table, report modal on request, JSON, 30-day cleanup | v0.3.1 API and live table checks passed; v0.3.2 modal awaits guided UI check; full local and HTTPS gates pending |
+| Professor service | Protected Form records, `.xlsx` classes, one-use codes, 10-second dashboard refresh, student status and latest activity table, report modal on request, JSON, 30-day cleanup | v0.3.1 API and live table checks passed; v0.3.2 layout, table, and modal passed guided desktop and narrow-width checks; full local and HTTPS gates pending |
 
 The popup warns when other tabs are open in the same Chrome window. **Start in fullscreen** is off by default so window controls remain visible; students can opt in. A confirmed Form submission ended monitoring in the tested practice Form. In v0.3.1, normal **End Examination** is unavailable during a paired session before confirmed submission; **Report a problem and stop early** is a marked fallback for technical failure. Local-only sessions retain manual End. This UI guard cannot stop a student from disabling the extension or closing Chrome. Question timing, screenshot-key detection, CSV, and scoring are deferred.
 
@@ -112,7 +112,8 @@ Run `npm.cmd test`. With the local Worker running, set `SERVICE_TEST_URL=http://
 | v0.3.0 actual outage recovery | Student 4's `www.iana.org` event was captured on October 12 at 11:48:50 UTC while port 8787 had no listener and received by D1 on October 13 at 04:26:35 UTC after Chrome and the service returned. The ended session has 89 incidents with 89 unique IDs and sequences 1–89. The teacher's gap label during this outage was not observed live. |
 | v0.3.1 automated and professor UI checks | **23/23 passed** with the local Worker on October 13, including refusal of normal End before confirmation, a separate early-stop reason, severity counts, latest-event fields, and one-use code state. The professor table and full-report action were inspected in Chrome in dark and light modes. |
 | v0.3.1 paired-session early stop | Student 5 paired and started with the Windows monitor connected. Normal End was disabled and the marked problem-stop control was available. The student used that control before submitting. The professor table showed **Ended early** and **Stopped before confirmed submission**. D1 stored `STUDENT_STOPPED_EARLY` with 16 incidents, 16 unique IDs, and sequences 1–16. Opening `www.iana.org` after End left the report at 16 incidents. |
-| v0.3.2 local automated check | **23/23 passed** with the local Worker on October 18. The end-acknowledgement test now waits within a bounded interval instead of assuming a fixed 250 ms response. The package contains manifest version 0.3.2 and its ZIP matches the published SHA-256. Guided visual checks of the new professor modal and popup theme are pending. |
+| v0.3.2 local automated check | **23/23 passed** with the local Worker on October 18. The end-acknowledgement test now waits within a bounded interval instead of assuming a fixed 250 ms response. The package contains manifest version 0.3.2 and its ZIP matches the published SHA-256. |
+| v0.3.2 guided professor UI check | On October 18, the setup showed one auto-height card per step at desktop and 390 px width. The full-width monitoring table showed code state, counts, status, latest activity, and event label; search and status filter changed visible rows correctly. Student 3's 41-event report opened in a modal with newest events first. Close and Escape returned keyboard focus to the report button. Dark and light views were inspected. A duplicate modal scrollbar and focus loss during table refresh were fixed during this check. |
 | Separate-device HTTPS gate | **Pending.** No hosted service or remote device test has been run. |
 
 <details><summary>Earlier test history</summary>
@@ -127,7 +128,7 @@ The extension cannot observe another browser or device. A foreground app categor
 
 ## CONCLUSION
 
-The local monitor is demonstrable. Phase 3's roster, delivery, Form submission, outage recovery, professor table, and paired-session end control have the local evidence listed above. The v0.3.2 visual checks, live gap display during an outage, and deployed separate-device flow remain before Phase 3 or remote monitoring can be presented as complete.
+The local monitor is demonstrable. Phase 3's roster, delivery, Form submission, outage recovery, professor table, report modal, and paired-session end control have the local evidence listed above. The v0.3.2 popup visual check, live gap display during an outage, and deployed separate-device flow remain before Phase 3 or remote monitoring can be presented as complete.
 
 ## APPENDICES
 

@@ -186,6 +186,7 @@ async function loadSessions() {
   const examId = selectedExam.id;
   const { sessions } = await api(`/api/teacher/exams/${examId}/sessions`);
   if (selectedExam?.id !== examId) return;
+  const focusedReportId = document.activeElement?.dataset.reportId;
   $("metric-assigned").textContent = sessions.length;
   $("metric-active").textContent = sessions.filter(s => s.status === "ACTIVE").length;
   $("metric-gap").textContent = sessions.filter(s => s.connection === "GAP").length;
@@ -245,6 +246,11 @@ async function loadSessions() {
     $("sessions").append(row);
   }
   filterSessionRows();
+  if (focusedReportId) {
+    const replacement = [...$("sessions").querySelectorAll("button[data-report-id]")]
+      .find(button => button.dataset.reportId === focusedReportId && !button.closest("[hidden]"));
+    replacement?.focus();
+  }
 }
 
 async function showReport(id) {
