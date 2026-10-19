@@ -33,14 +33,19 @@ $manifest.host_permissions = @($ServiceOrigin.TrimEnd('/') + '/*')
 $instructions = @"
 IntegriTest v$version
 
-1. Extract this folder. In Chrome, open chrome://extensions, enable Developer mode,
-   click Load unpacked, and choose the extension folder INSIDE integritest-v$version.
-   That extension folder must contain manifest.json. If Chrome says the manifest
-   is missing, you selected the outer integritest-v$version folder.
-2. Verify the extension ID is amlfomdhhaklmifkneplnngkbaabibgp.
-3. In PowerShell run:
+1. In Downloads, right-click the ZIP and choose Extract All. Open the extracted
+   folder showing both extension and native-host. Keep this folder in place.
+2. In Chrome, open chrome://extensions, turn on Developer mode, and click
+   Load unpacked. Open the extracted extension folder, then click Select Folder.
+   Chrome's folder picker hides files, so only icons may be visible inside it.
+   Do not select icons or the outer integritest-v$version folder.
+3. Verify the extension ID is amlfomdhhaklmifkneplnngkbaabibgp.
+4. In ordinary File Explorer, return to the extracted folder showing extension
+   and native-host. Click the address bar, type powershell, and press Enter.
+   In the PowerShell window run:
    powershell -NoProfile -ExecutionPolicy Bypass -File native-host\install.ps1 -ExtensionId amlfomdhhaklmifkneplnngkbaabibgp
-4. Reload the extension and open its popup. Pair with the code given by the professor.
+   Look for the Registered message, then reload the extension.
+5. Open the popup, pair with your own code, and open the registered Form.
 
 Teacher service: $ServiceOrigin
 The Windows companion sends only foreground app categories and timestamps.

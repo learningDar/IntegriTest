@@ -1,21 +1,21 @@
 # IntegriTest user guide
 
-This guide covers the hosted pilot at [integritest.dareugenio.workers.dev](https://integritest.dareugenio.workers.dev/). It records observable exam activity for professor review; it does not decide whether a student cheated. The separate-device HTTPS exam test is still pending.
+This guide covers the hosted pilot at [integritest.dareugenio.workers.dev](https://integritest.dareugenio.workers.dev/). It records observable exam activity for professor review; it does not decide whether a student cheated. Live activity, automatic End, and gap recovery were observed across devices with v0.3.3; the current v0.3.4 package updates setup instructions. The full remote gate is still pending.
 
 ## Student: prepare a Windows computer
 
 Use **Google Chrome on a Windows laptop or desktop**. Phone-based Google Forms sessions are outside this pilot because the extension and Windows companion have not been verified on phones.
 
 1. Obtain your own one-time join code privately from your professor. Do not share it or use another student's code.
-2. Download [IntegriTest v0.3.3](https://integritest.dareugenio.workers.dev/downloads/integritest-v0.3.3.zip) and its [SHA-256 checksum](https://integritest.dareugenio.workers.dev/downloads/integritest-v0.3.3.sha256). Extract the ZIP and keep the extracted folder in place while using the monitor.
-3. Open `chrome://extensions`, turn on **Developer mode**, choose **Load unpacked**, and select the extracted **`extension`** folder containing `manifest.json`. The extension ID should be `amlfomdhhaklmifkneplnngkbaabibgp`. If an older unpacked IntegriTest is installed, remove it before loading this version.
-4. Open PowerShell in the extracted `integritest-v0.3.3` folder and run:
+2. Download [IntegriTest v0.3.4](https://integritest.dareugenio.workers.dev/downloads/integritest-v0.3.4.zip) and its [SHA-256 checksum](https://integritest.dareugenio.workers.dev/downloads/integritest-v0.3.4.sha256). In **Downloads**, right-click the ZIP, choose **Extract All**, and open the resulting folder. Keep it in place while using the monitor. You should see `extension`, `native-host`, and `README.txt` together.
+3. Open `chrome://extensions`, turn on **Developer mode**, and choose **Load unpacked**. In Chrome's folder picker, open the extracted **`extension`** folder and click **Select Folder**. The picker hides files, so seeing only `icons` inside `extension` is normal; do not select `icons`. The extension ID should be `amlfomdhhaklmifkneplnngkbaabibgp`. If an older unpacked IntegriTest is installed, remove it before loading this version.
+4. In ordinary File Explorer, return to the extracted folder that shows both `extension` and `native-host`. Click the address bar, type `powershell`, and press Enter. In the PowerShell window that opens, run:
 
    ```powershell
    powershell -NoProfile -ExecutionPolicy Bypass -File native-host\install.ps1 -ExtensionId amlfomdhhaklmifkneplnngkbaabibgp
    ```
 
-   This registers the Windows companion for your Windows account. Reload the extension in `chrome://extensions` afterward. If you move the extracted folder later, run the command again from its new location.
+   This registers the Windows companion for your Windows account. A successful run prints a `Registered` message and the host path. Reload the extension in `chrome://extensions` afterward. If you move the extracted folder later, run the command again from its new location.
 5. Open the extension popup, enter **your** code, and select **Pair**. Use **Open registered Form** in the popup. Check that the assigned name and ID belong to you, the popup can reach the teacher service, and **Desktop monitor** says **connected**. Tell your professor if any of those checks fail.
 6. On the registered Form, choose **Start Examination**. Fullscreen is optional. After the Form accepts your submission and shows its confirmation page, the paired session should end automatically. A failed submission with unanswered required questions should leave monitoring active. If the confirmation appears but monitoring continues, tell your professor. Use **Report a problem and stop early** only for a technical problem; the report labels that separately.
 
@@ -36,4 +36,4 @@ From the repository root, run `npm.cmd install`, `npm.cmd run build:roster`, and
 
 ## Release verification still required
 
-From a separate Windows device, confirm code pairing, live browser and desktop events, a connection gap and recovery, confirmed submission, no incidents after End, professor access control, and report privacy. Also verify wrong/reused codes, retry without duplicates, and 30-day cleanup with disposable hosted records. Until the full gate passes, treat hosted monitoring as a pilot.
+Cross-device live activity, confirmed-submission End, and visible gap recovery with v0.3.3 have been reported. Still record event categories and counts, no incidents after End, report privacy, wrong/reused codes, retry without duplicates, and 30-day cleanup with disposable hosted records. Until the full gate passes, treat hosted monitoring as a pilot.

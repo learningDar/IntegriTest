@@ -4,11 +4,11 @@
 
 <p align="center">Google Forms exam activity records for professor review.</p>
 
-<p align="center"><img alt="Local monitor verified" src="https://img.shields.io/badge/local_monitor-verified-445b9f"> <img alt="Teacher service local checks" src="https://img.shields.io/badge/teacher_service-local_checks-6b668d"> <img alt="Remote flow pending" src="https://img.shields.io/badge/remote_flow-pending-666666"> <a href="LICENSE"><img alt="MIT license" src="https://img.shields.io/badge/license-MIT-a5b4fc"></a></p>
+<p align="center"><img alt="Local monitor verified" src="https://img.shields.io/badge/local_monitor-verified-445b9f"> <img alt="Teacher service local checks" src="https://img.shields.io/badge/teacher_service-local_checks-6b668d"> <img alt="Cross-device live view observed" src="https://img.shields.io/badge/cross--device_live_view-observed-168f7a"> <a href="LICENSE"><img alt="MIT license" src="https://img.shields.io/badge/license-MIT-a5b4fc"></a></p>
 
 <p align="center"><a href="#installation--setup">Setup</a> · <a href="USER_GUIDE.md">User guide</a> · <a href="#system-architecture--components">Architecture</a> · <a href="#limitations">Limitations</a></p>
 
-<p align="center"><strong>main:</strong> v0.3.2 local checks passed · v0.3.3 HTTPS smoke checks passed · separate-device verification pending</p>
+<p align="center"><strong>main:</strong> v0.3.3 cross-device activity, automatic End, and gap recovery observed · v0.3.4 setup package · full remote gate pending</p>
 
 ## PROJECT OVERVIEW
 
@@ -44,7 +44,7 @@ The popup warns when other tabs are open in the same Chrome window. **Start in f
 | Extension incident queue | Chrome local storage | On-screen timeline and JSON fallback |
 | Queued incidents and heartbeats | Worker running locally → D1 | Protected professor view and service JSON |
 
-The extension service worker validates session boundaries and retries delivery. The C# native host sends categories and timestamps, without document contents or window titles. D1 keeps names and IDs in assignment/session metadata; incident rows keep only approved activity fields. A Worker and D1 database have been deployed for a hosted pilot; separate-device HTTPS delivery remains unverified.
+The extension service worker validates session boundaries and retries delivery. The C# native host sends categories and timestamps, without document contents or window titles. D1 keeps names and IDs in assignment/session metadata; incident rows keep only approved activity fields. In the reported cross-device test, the professor view received live activity, the Form's confirmed submission ended monitoring automatically, and a visible connection gap cleared after recovery. The full remote gate remains open.
 
 ## SYSTEM WORKFLOW
 
@@ -62,7 +62,7 @@ Chrome Manifest V3, JavaScript/HTML/CSS, Chrome storage/alarms/native messaging,
 
 ## INSTALLATION / SETUP
 
-The [hosted setup page](https://integritest.dareugenio.workers.dev/) provides the current Windows and Chrome package, checksum, and installation steps. The same instructions, professor workflow, and local development commands are in [USER_GUIDE.md](USER_GUIDE.md). The deployed v0.3.3 package targets that exact HTTPS service; the separate-device exam test is still pending.
+The [hosted setup page](https://integritest.dareugenio.workers.dev/) provides the current Windows and Chrome package, checksum, and installation steps. The same instructions, professor workflow, and local development commands are in [USER_GUIDE.md](USER_GUIDE.md). The v0.3.4 package targets that HTTPS service. Live activity, automatic End, and gap recovery were observed across devices with v0.3.3; the remaining remote checks are listed below.
 
 ## USER GUIDE
 
@@ -77,10 +77,10 @@ Follow the repository [student and professor guide](USER_GUIDE.md) for setup, ex
 
 ## CONCLUSION
 
-The local monitor is demonstrable. The hosted Worker and v0.3.3 download passed basic HTTP and access checks. The remaining Phase 3 gate is a separate-device HTTPS exam run plus hosted checks for code use, retry, session boundaries, access control, report privacy, and retention. Phase 4 combined QA follows that gate.
+The local monitor is demonstrable. The user reported live student activity, automatic End, and a visible gap that cleared after reconnection in the hosted cross-device test. Hosted health, package integrity, and basic access checks also passed. Phase 3 still needs recorded checks for wrong/reused codes, retry without duplicates, no post-End incidents, report privacy, and hosted retention. Phase 4 combined QA follows that gate.
 
 ## APPENDICES
 
 - [MIT license](LICENSE)
 - [Student and professor user guide](USER_GUIDE.md)
-- [Current package checksum](public/downloads/integritest-v0.3.3.sha256)
+- [Current package checksum](public/downloads/integritest-v0.3.4.sha256)
