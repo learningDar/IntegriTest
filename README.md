@@ -8,7 +8,7 @@
 
 <p align="center"><a href="#installation--setup">Setup</a> · <a href="#user-guide">Professor guide</a> · <a href="#system-architecture--components">Architecture</a> · <a href="#limitations">Limitations</a></p>
 
-<p align="center"><strong>main:</strong> v0.3.2 local teacher build · HTTPS and separate-device verification pending</p>
+<p align="center"><strong>main:</strong> v0.3.2 local checks passed · hosted pilot deployed · separate-device verification pending</p>
 
 ## PROJECT OVERVIEW
 
@@ -44,7 +44,7 @@ The popup warns when other tabs are open in the same Chrome window. **Start in f
 | Extension incident queue | Chrome local storage | On-screen timeline and JSON fallback |
 | Queued incidents and heartbeats | Worker running locally → D1 | Protected professor view and service JSON |
 
-The extension service worker validates session boundaries and retries delivery. The C# native host sends categories and timestamps, without document contents or window titles. D1 keeps names and IDs in assignment/session metadata; incident rows keep only approved activity fields. The Worker currently runs locally; HTTPS delivery remains unverified.
+The extension service worker validates session boundaries and retries delivery. The C# native host sends categories and timestamps, without document contents or window titles. D1 keeps names and IDs in assignment/session metadata; incident rows keep only approved activity fields. A Worker and D1 database have been deployed for a hosted pilot; separate-device HTTPS delivery remains unverified.
 
 ## SYSTEM WORKFLOW
 
@@ -58,7 +58,7 @@ A code identifies an assigned roster entry, **not a verified physical person**. 
 
 ## TOOLS & TECHNOLOGIES
 
-Chrome Manifest V3, JavaScript/HTML/CSS, Chrome storage/alarms/native messaging, Windows and a C# foreground host, Cloudflare Workers and D1, Wrangler, a pinned bundled `read-excel-file` reader, Node.js tests, Git, and GitHub. The project is [MIT licensed](LICENSE).
+Chrome Manifest V3, JavaScript/HTML/CSS, Chrome storage/alarms/native messaging, Windows and a C# foreground host, Cloudflare Workers and D1, Wrangler, a pinned bundled `read-excel-file` reader, Node.js build tools, Git, and GitHub. The project is [MIT licensed](LICENSE).
 
 ## INSTALLATION / SETUP
 
@@ -69,9 +69,9 @@ Chrome Manifest V3, JavaScript/HTML/CSS, Chrome storage/alarms/native messaging,
 3. Run `npm.cmd run dev -- --ip 127.0.0.1 --port 8787`. Open the [local setup guide](http://127.0.0.1:8787/) and [professor workspace](http://127.0.0.1:8787/teacher.html).
 4. Run `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/package-demo.ps1`. In Chrome's **Load unpacked** picker, select the inner `dist/integritest-v0.3.2/extension` folder containing `manifest.json`. Its expected ID is `amlfomdhhaklmifkneplnngkbaabibgp`. Install the bundled native host with that ID.
 
-The v0.3.2 ZIP targets localhost. Its [SHA-256 file](public/downloads/integritest-v0.3.2.sha256) identifies the exact package. The local password is outside Git. A reachable HTTPS package will be built for its exact deployed origin after the local gate passes.
+The checked-in v0.3.2 ZIP targets localhost and must not be shared for remote exams. Its [SHA-256 file](public/downloads/integritest-v0.3.2.sha256) identifies that exact package. The local password is outside Git. Rebuild the package for the exact hosted HTTPS origin before inviting students.
 
-**HTTPS release from `main` after the local gate:** Cloudflare Workers and D1 are the selected host because the same Worker, static pages, scheduled cleanup, and D1 schema already run locally. Sign in with `npx wrangler login`, create `integritest` with `npx wrangler d1 create integritest`, replace the placeholder D1 ID in `wrangler.jsonc`, and apply migrations with `npx wrangler d1 migrations apply integritest --remote`. Deploy once to obtain the Worker URL, set `TEACHER_PASSWORD`, `SESSION_SECRET`, and `ALLOWED_EXTENSION_IDS` with `npx wrangler secret put NAME`, then rebuild the package with `scripts/package-demo.ps1 -ServiceOrigin https://YOUR_WORKER_ORIGIN`. Verify its checksum and deploy again to publish the updated static assets. Update the setup page's local-only status before sharing the hosted link. Pairing, delivery, gaps, ending, teacher access, and JSON privacy still require a separate Windows device before remote monitoring is called operational. See [Cloudflare's D1 local development](https://developers.cloudflare.com/d1/best-practices/local-development/) and [static assets](https://developers.cloudflare.com/workers/static-assets/binding/) guides.
+**HTTPS pilot from `main`:** The `integritest` D1 database has its migrations and the Worker has been uploaded. To finish the hosted client, set `TEACHER_PASSWORD`, `SESSION_SECRET`, and `ALLOWED_EXTENSION_IDS` with `npx wrangler secret put NAME`. Rebuild the package with `scripts/package-demo.ps1 -ServiceOrigin https://YOUR_WORKER_ORIGIN`, verify its checksum, commit the updated ZIP and checksum to `main`, and deploy again with `npx wrangler deploy`. Pairing, delivery, gaps, ending, teacher access, and JSON privacy still require a separate Windows device before remote monitoring is called operational. See [Cloudflare's D1 commands](https://developers.cloudflare.com/d1/wrangler-commands/) and [static assets](https://developers.cloudflare.com/workers/static-assets/binding/) guides.
 
 | Host | Fit for this project |
 | --- | --- |
@@ -96,11 +96,10 @@ The extension cannot observe another browser or device. A foreground app categor
 
 ## CONCLUSION
 
-The local monitor is demonstrable. Phase 3's roster, delivery, Form submission, outage recovery, professor table, report modal, and paired-session end control have local verification recorded in the private development documentation. Live gap display during an outage and the deployed separate-device flow remain before Phase 3 or remote monitoring can be presented as complete.
+The local monitor is demonstrable. Phase 3's roster, delivery, Form submission, outage recovery, professor table, report modal, and paired-session end control have local verification retained in the private development branch. The initial hosted Worker is deployed, but live gap display during an outage and the separate-device flow remain before remote monitoring can be presented as complete.
 
 ## APPENDICES
 
-- [MVP context and phase gates](GOOGLE_FORMS_EXAM_MONITOR_MVP_CONTEXT.md)
-- [Public release preparation](scripts/public-release/README.md)
 - [MIT license](LICENSE)
-- [Project skills](.agents/skills/)
+- [Student and professor setup page](public/index.html)
+- [Current package checksum](public/downloads/integritest-v0.3.2.sha256)

@@ -6,5 +6,9 @@ node_modules/
 dist/
 secrets/
 AGENTS.md
-.agents
-docs
+.agents/
+docs/
+GOOGLE_FORMS_EXAM_MONITOR_MVP_CONTEXT.md
+tests/
+scripts/prepare-public-export.ps1
+scripts/public-release/
