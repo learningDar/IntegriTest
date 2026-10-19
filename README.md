@@ -8,7 +8,7 @@
 
 <p align="center"><a href="#installation--setup">Setup</a> · <a href="#user-guide">Professor guide</a> · <a href="#system-architecture--components">Architecture</a> · <a href="#limitations">Limitations</a></p>
 
-<p align="center"><strong>main:</strong> v0.3.2 local checks passed · hosted pilot deployed · separate-device verification pending</p>
+<p align="center"><strong>main:</strong> v0.3.2 local checks passed · v0.3.3 HTTPS package prepared · separate-device verification pending</p>
 
 ## PROJECT OVERVIEW
 
@@ -62,16 +62,16 @@ Chrome Manifest V3, JavaScript/HTML/CSS, Chrome storage/alarms/native messaging,
 
 ## INSTALLATION / SETUP
 
-**Current local build (`main`, v0.3.2):**
+**Local development from `main` (v0.3.3 source):**
 
 1. Run `npm.cmd install`, `npm.cmd run build:roster`, then `npm.cmd run db:local`.
 2. Put `TEACHER_PASSWORD`, a random `SESSION_SECRET`, and `ALLOWED_EXTENSION_IDS=amlfomdhhaklmifkneplnngkbaabibgp` in an ignored `.dev.vars` file.
 3. Run `npm.cmd run dev -- --ip 127.0.0.1 --port 8787`. Open the [local setup guide](http://127.0.0.1:8787/) and [professor workspace](http://127.0.0.1:8787/teacher.html).
-4. Run `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/package-demo.ps1`. In Chrome's **Load unpacked** picker, select the inner `dist/integritest-v0.3.2/extension` folder containing `manifest.json`. Its expected ID is `amlfomdhhaklmifkneplnngkbaabibgp`. Install the bundled native host with that ID.
+4. Run `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/package-demo.ps1` for a localhost package. In Chrome's **Load unpacked** picker, select the inner `dist/integritest-v0.3.3/extension` folder containing `manifest.json`. Its expected ID is `amlfomdhhaklmifkneplnngkbaabibgp`. Install the bundled native host with that ID.
 
-The checked-in v0.3.2 ZIP targets localhost and must not be shared for remote exams. Its [SHA-256 file](public/downloads/integritest-v0.3.2.sha256) identifies that exact package. The local password is outside Git. Rebuild the package for the exact hosted HTTPS origin before inviting students.
+The public [v0.3.3 ZIP](public/downloads/integritest-v0.3.3.zip) targets `https://integritest.dareugenio.workers.dev`; its [SHA-256 file](public/downloads/integritest-v0.3.3.sha256) identifies that package. The local password is outside Git. The package has not yet passed the separate-device HTTPS acceptance gate.
 
-**HTTPS pilot from `main`:** The `integritest` D1 database has its migrations and the Worker has been uploaded. To finish the hosted client, set `TEACHER_PASSWORD`, `SESSION_SECRET`, and `ALLOWED_EXTENSION_IDS` with `npx wrangler secret put NAME`. Rebuild the package with `scripts/package-demo.ps1 -ServiceOrigin https://YOUR_WORKER_ORIGIN`, verify its checksum, commit the updated ZIP and checksum to `main`, and deploy again with `npx wrangler deploy`. Pairing, delivery, gaps, ending, teacher access, and JSON privacy still require a separate Windows device before remote monitoring is called operational. See [Cloudflare's D1 commands](https://developers.cloudflare.com/d1/wrangler-commands/) and [static assets](https://developers.cloudflare.com/workers/static-assets/binding/) guides.
+**HTTPS pilot from `main`:** The `integritest` D1 database has its migrations and the Worker has been uploaded. The release package is built for the current HTTPS origin. The Worker requires `TEACHER_PASSWORD`, `SESSION_SECRET`, and `ALLOWED_EXTENSION_IDS` as Cloudflare secrets. Pairing, delivery, gaps, ending, teacher access, and JSON privacy still require a separate Windows device before remote monitoring is called operational. See [Cloudflare's D1 commands](https://developers.cloudflare.com/d1/wrangler-commands/) and [static assets](https://developers.cloudflare.com/workers/static-assets/binding/) guides.
 
 | Host | Fit for this project |
 | --- | --- |
@@ -102,4 +102,4 @@ The local monitor is demonstrable. Phase 3's roster, delivery, Form submission, 
 
 - [MIT license](LICENSE)
 - [Student and professor setup page](public/index.html)
-- [Current package checksum](public/downloads/integritest-v0.3.2.sha256)
+- [Current package checksum](public/downloads/integritest-v0.3.3.sha256)
