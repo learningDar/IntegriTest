@@ -6,7 +6,7 @@
 
 <p align="center"><img alt="Local monitor verified" src="https://img.shields.io/badge/local_monitor-verified-445b9f"> <img alt="Teacher service local checks" src="https://img.shields.io/badge/teacher_service-local_checks-6b668d"> <img alt="Remote flow pending" src="https://img.shields.io/badge/remote_flow-pending-666666"> <a href="LICENSE"><img alt="MIT license" src="https://img.shields.io/badge/license-MIT-a5b4fc"></a></p>
 
-<p align="center"><a href="#installation--setup">Setup</a> · <a href="#user-guide">Professor guide</a> · <a href="#system-architecture--components">Architecture</a> · <a href="#limitations">Limitations</a></p>
+<p align="center"><a href="#installation--setup">Setup</a> · <a href="USER_GUIDE.md">User guide</a> · <a href="#system-architecture--components">Architecture</a> · <a href="#limitations">Limitations</a></p>
 
 <p align="center"><strong>main:</strong> v0.3.2 local checks passed · v0.3.3 HTTPS smoke checks passed · separate-device verification pending</p>
 
@@ -62,44 +62,25 @@ Chrome Manifest V3, JavaScript/HTML/CSS, Chrome storage/alarms/native messaging,
 
 ## INSTALLATION / SETUP
 
-**Local development from `main` (v0.3.3 source):**
-
-1. Run `npm.cmd install`, `npm.cmd run build:roster`, then `npm.cmd run db:local`.
-2. Put `TEACHER_PASSWORD`, a random `SESSION_SECRET`, and `ALLOWED_EXTENSION_IDS=amlfomdhhaklmifkneplnngkbaabibgp` in an ignored `.dev.vars` file.
-3. Run `npm.cmd run dev -- --ip 127.0.0.1 --port 8787`. Open the [local setup guide](http://127.0.0.1:8787/) and [professor workspace](http://127.0.0.1:8787/teacher.html).
-4. Run `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/package-demo.ps1` for a localhost package. In Chrome's **Load unpacked** picker, select the inner `dist/integritest-v0.3.3/extension` folder containing `manifest.json`. Its expected ID is `amlfomdhhaklmifkneplnngkbaabibgp`. Install the bundled native host with that ID.
-
-The public [v0.3.3 ZIP](public/downloads/integritest-v0.3.3.zip) targets `https://integritest.dareugenio.workers.dev`; its [SHA-256 file](public/downloads/integritest-v0.3.3.sha256) identifies that package. The local password is outside Git. The package has not yet passed the separate-device HTTPS acceptance gate.
-
-**HTTPS pilot from `main`:** The `integritest` D1 database and Worker are deployed at [integritest.dareugenio.workers.dev](https://integritest.dareugenio.workers.dev/). Its required secrets are configured. The v0.3.3 health endpoint, setup ZIP and checksum, professor login, unsigned-request rejection, and extension-origin checks passed from the development machine on October 19. Pairing, delivery, gaps, ending, and JSON privacy still require a separate Windows device before remote monitoring is called operational. See [Cloudflare's D1 commands](https://developers.cloudflare.com/d1/wrangler-commands/) and [static assets](https://developers.cloudflare.com/workers/static-assets/binding/) guides.
-
-| Host | Fit for this project |
-| --- | --- |
-| [Cloudflare Workers](https://developers.cloudflare.com/workers/platform/limits/) + [D1](https://developers.cloudflare.com/d1/platform/pricing/) | **Selected.** No service rewrite; Free allowances include 100,000 Worker requests/day, 5 million D1 rows read/day, 100,000 rows written/day, and 5 GB stored. This is an estimate of suitability for a controlled class demonstration, not a measured hosted result. |
-| [Render Free](https://render.com/docs/free) | A service can sleep after 15 minutes idle; Free Postgres expires after 30 days. |
-| Vercel + [Supabase Free](https://supabase.com/docs/guides/platform/free-project-pausing) | Requires splitting or rewriting the current Worker/D1 path; inactive Free projects can pause. |
-| [GitHub Pages](https://docs.github.com/en/pages/getting-started-with-github-pages/creating-a-github-pages-site) | Can serve a guide, but cannot run the teacher API or database. |
-
-The October 19 local demonstration needs no hosting payment or Chrome Web Store listing. Store publication is optional and requires a [one-time developer registration fee](https://developer.chrome.com/docs/webstore/register/). A later Cloudflare deployment can use the included `workers.dev` address and Free allowances; the Workers Paid plan starts at $5 USD/month. Free D1 queries fail after a daily read or write limit is reached. Measure D1 rows read by the table's 10-second aggregate query before a full-class rollout; the free-tier fit is an estimate, not a hosted result. See [Workers pricing](https://developers.cloudflare.com/workers/platform/pricing/), [D1 pricing](https://developers.cloudflare.com/d1/platform/pricing/), and [workers.dev routing](https://developers.cloudflare.com/workers/configuration/routing/workers-dev/).
+The [hosted setup page](https://integritest.dareugenio.workers.dev/) provides the current Windows and Chrome package, checksum, and installation steps. The same instructions, professor workflow, and local development commands are in [USER_GUIDE.md](USER_GUIDE.md). The deployed v0.3.3 package targets that exact HTTPS service; the separate-device exam test is still pending.
 
 ## USER GUIDE
 
-**Student:** Obtain a one-time code from the professor. Pair in the extension popup, open the registered Form link, choose whether to start in fullscreen, and select **Start Examination**. The popup has a saved dark/light choice and lists the newest local incident first. After submitting, check the status. If it stays Monitoring after confirmed submission, contact the professor. For a technical failure, **Report a problem and stop early** records a distinct early end. Local JSON export is a fallback if delivery fails.
-
-**Professor:** Sign in at the [workspace](public/teacher.html). The setup pairs import/saved classes, register/choose exam, and selected exam/late additions. Paired cards match heights; saved lists scroll within their cards. Import a class workbook and inspect preview errors, register and select a published Form, then assign the class. For a late student, enter `Name` or `Name | Student ID`; the service supplies a distinct internal ID when omitted. Copy or download codes when shown. The full-width table refreshes every 10 seconds and shows each student's code state, start time, Low/Medium/High counts, connection status, latest activity, and event name. **View full report** opens a modal with newest incidents first and a JSON download; that exported JSON remains in ascending sequence. The raw code is shown only when issued. Match Form responses separately.
-
-The [public setup page](public/index.html) explains installation and what is recorded. The published [10-question Systems Integration and Architecture practice Form](https://docs.google.com/forms/d/e/1FAIpQLSdOyiXOUU2YWqp2RFh6SR_-dPf8ZmixAjrT7bZ4EE0TnS7oVQ/viewform) can be used for activity demonstrations. Its answers are not collected by the extension.
+Follow the repository [student and professor guide](USER_GUIDE.md) for setup, exam preparation, monitoring, and report review. The [10-question Systems Integration and Architecture practice Form](https://docs.google.com/forms/d/e/1FAIpQLSdOyiXOUU2YWqp2RFh6SR_-dPf8ZmixAjrT7bZ4EE0TnS7oVQ/viewform) is available for testing; the extension does not collect its answers.
 
 ## LIMITATIONS
 
-The extension cannot observe another browser or device. A foreground app category does not reveal what was read or typed. Opening ChatGPT does not prove it was used. A connection gap cannot show activity during the gap. Anyone controlling an unmanaged device may disable monitoring; a code cannot verify physical identity. Dedicated PDF readers other than Adobe Acrobat need explicit verification. Report retention is 30 days after the service cleanup runs.
+- **Windows and Chrome only:** The extension and Windows companion have not been set up or verified on a phone. A student taking the Form on a phone is outside this monitoring flow; the professor should require the supported computer setup for this pilot.
+- **Codes do not prove identity:** A one-time code is assigned to a roster entry, but someone who obtains another student's unused code could pair first and have activity recorded under that entry. Professors should share codes privately, verify the recipient separately, and match the Google Forms response to the roster.
+- The extension cannot observe another browser or device. An unmanaged student device can disable monitoring. A connection gap shows lost contact, not what happened during the gap.
+- A foreground app category does not reveal what was read or typed. Opening ChatGPT does not prove use. PDF readers other than Adobe Acrobat need explicit verification. Reports are retained for 30 days before scheduled cleanup.
 
 ## CONCLUSION
 
-The local monitor is demonstrable. Phase 3's roster, delivery, Form submission, outage recovery, professor table, report modal, and paired-session end control have local verification retained in the private development branch. The hosted Worker and v0.3.3 download passed basic HTTP and access checks, but live gap display during an outage and the separate-device flow remain before remote monitoring can be presented as complete.
+The local monitor is demonstrable. The hosted Worker and v0.3.3 download passed basic HTTP and access checks. The remaining Phase 3 gate is a separate-device HTTPS exam run plus hosted checks for code use, retry, session boundaries, access control, report privacy, and retention. Phase 4 combined QA follows that gate.
 
 ## APPENDICES
 
 - [MIT license](LICENSE)
-- [Student and professor setup page](public/index.html)
+- [Student and professor user guide](USER_GUIDE.md)
 - [Current package checksum](public/downloads/integritest-v0.3.3.sha256)
