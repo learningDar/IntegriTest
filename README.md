@@ -8,7 +8,7 @@
 
 <p align="center"><a href="#installation--setup">Setup</a> · <a href="#user-guide">Professor guide</a> · <a href="#system-architecture--components">Architecture</a> · <a href="#limitations">Limitations</a></p>
 
-<p align="center"><strong>main:</strong> v0.3.2 local checks passed · v0.3.3 HTTPS package prepared · separate-device verification pending</p>
+<p align="center"><strong>main:</strong> v0.3.2 local checks passed · v0.3.3 HTTPS smoke checks passed · separate-device verification pending</p>
 
 ## PROJECT OVERVIEW
 
@@ -71,7 +71,7 @@ Chrome Manifest V3, JavaScript/HTML/CSS, Chrome storage/alarms/native messaging,
 
 The public [v0.3.3 ZIP](public/downloads/integritest-v0.3.3.zip) targets `https://integritest.dareugenio.workers.dev`; its [SHA-256 file](public/downloads/integritest-v0.3.3.sha256) identifies that package. The local password is outside Git. The package has not yet passed the separate-device HTTPS acceptance gate.
 
-**HTTPS pilot from `main`:** The `integritest` D1 database has its migrations and the Worker has been uploaded. The release package is built for the current HTTPS origin. The Worker requires `TEACHER_PASSWORD`, `SESSION_SECRET`, and `ALLOWED_EXTENSION_IDS` as Cloudflare secrets. Pairing, delivery, gaps, ending, teacher access, and JSON privacy still require a separate Windows device before remote monitoring is called operational. See [Cloudflare's D1 commands](https://developers.cloudflare.com/d1/wrangler-commands/) and [static assets](https://developers.cloudflare.com/workers/static-assets/binding/) guides.
+**HTTPS pilot from `main`:** The `integritest` D1 database and Worker are deployed at [integritest.dareugenio.workers.dev](https://integritest.dareugenio.workers.dev/). Its required secrets are configured. The v0.3.3 health endpoint, setup ZIP and checksum, professor login, unsigned-request rejection, and extension-origin checks passed from the development machine on October 19. Pairing, delivery, gaps, ending, and JSON privacy still require a separate Windows device before remote monitoring is called operational. See [Cloudflare's D1 commands](https://developers.cloudflare.com/d1/wrangler-commands/) and [static assets](https://developers.cloudflare.com/workers/static-assets/binding/) guides.
 
 | Host | Fit for this project |
 | --- | --- |
@@ -96,7 +96,7 @@ The extension cannot observe another browser or device. A foreground app categor
 
 ## CONCLUSION
 
-The local monitor is demonstrable. Phase 3's roster, delivery, Form submission, outage recovery, professor table, report modal, and paired-session end control have local verification retained in the private development branch. The initial hosted Worker is deployed, but live gap display during an outage and the separate-device flow remain before remote monitoring can be presented as complete.
+The local monitor is demonstrable. Phase 3's roster, delivery, Form submission, outage recovery, professor table, report modal, and paired-session end control have local verification retained in the private development branch. The hosted Worker and v0.3.3 download passed basic HTTP and access checks, but live gap display during an outage and the separate-device flow remain before remote monitoring can be presented as complete.
 
 ## APPENDICES
 
