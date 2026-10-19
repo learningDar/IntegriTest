@@ -11,7 +11,7 @@
     {
       "binding": "DB",
       "database_name": "integritest",
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_id": "45aed9fa-2549-48a1-b78e-9a87709ccf82",
       "migrations_dir": "server/migrations"
     }
   ],
